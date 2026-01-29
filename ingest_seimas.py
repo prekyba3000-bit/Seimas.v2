@@ -53,13 +53,20 @@ def sync_db():
                 party = pareigos.get('padalinio_pavadinimas')
                 break
         
+        # Photo URL - Heuristic based on pattern or children
+        # Seimas API typically has a photo link or thumb
+        photo_url = f"https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id={mp_id}"
+        bio = "" # Bio requires separate fetch or child node
+        
         mps.append((
             normalize(full_name),
             full_name,
             mp_id,
             party,
             is_active,
-            term_end
+            term_end,
+            photo_url,
+            bio
         ))
         
     print(f"Found {active_count} active MPs out of {len(mps)} total records.")
@@ -69,12 +76,13 @@ def sync_db():
     
     sql = """
         INSERT INTO politicians (
-            full_name_normalized, display_name, seimas_mp_id, current_party, is_active, term_end_date
+            full_name_normalized, display_name, seimas_mp_id, current_party, is_active, term_end_date, photo_url, bio
         ) VALUES %s
         ON CONFLICT (seimas_mp_id) DO UPDATE SET
             current_party = EXCLUDED.current_party,
             is_active = EXCLUDED.is_active,
-            term_end_date = EXCLUDED.term_end_date;
+            term_end_date = EXCLUDED.term_end_date,
+            photo_url = EXCLUDED.photo_url;
     """
     
     execute_values(cur, sql, mps)

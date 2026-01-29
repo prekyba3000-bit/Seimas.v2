@@ -3,20 +3,19 @@
 ## Stack
 - **Language**: Python 3.x
 - **Database**: PostgreSQL (with UUID extension)
-- **Version Control**: Git
+- **Version Control**: Git / Beads (bd)
+- **Licensing**: **Free and Open Source Software (FOSS)** - MIT/GPL (Compatible with NGI Zero)
 
 ## Key Dependencies
 - `subprocess`: For orchestrating script execution.
-- `psycopg2` / `sqlalchemy` (implied): For database interaction.
+- `psycopg2` / `sqlalchemy`: For database interaction.
 - `requests` / `lxml`: For scraping/API calls.
 
 ## Development Environment
 - Linux-based environment (Julio's workspace).
 - Project root: `/home/julio/.gemini/antigravity/scratch/transparency_project/`
 
-## Database Schema
-The schema is defined in `schema.sql` and includes:
-- `politicians`: Central identity table.
-- `assets`: VMI asset data.
-- `interests`: VTEK conflict of interest data.
-- `votes` & `mp_votes`: Voting records.
+## Compliance & Standards
+- **Accessibility**: Targeted WCAG 2.1 AA compliance for end-user interfaces.
+- **Security**: Mandatory independent audits for production-ready components.
+- **Standardization**: Commitment to open protocols and institutional reuse.

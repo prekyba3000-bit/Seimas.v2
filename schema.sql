@@ -20,6 +20,8 @@ CREATE TABLE politicians (
     current_party TEXT,
     is_active BOOLEAN DEFAULT TRUE,
     term_end_date DATE,
+    photo_url TEXT,
+    bio TEXT,
     last_updated TIMESTAMP DEFAULT NOW()
 );
 -- 2. Assets (VMI Data)
