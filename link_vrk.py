@@ -7,7 +7,7 @@ import os
 import re
 
 # --- Configuration ---
-DB_DSN = os.getenv("DB_DSN", "postgres://julio:jou@localhost:5432/transparency_db")
+DB_DSN = os.getenv("DB_DSN") 
 
 # VRK 2024 Seimas Election IDs
 ELECTION_ID = "1544" 

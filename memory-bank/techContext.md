@@ -9,7 +9,8 @@
 ## Key Dependencies
 - `subprocess`: For orchestrating script execution.
 - `psycopg2` / `sqlalchemy`: For database interaction.
-- `requests` / `lxml`: For scraping/API calls.
+- `requests` / `defusedxml`: For secure scraping and API calls.
+- `beautifulsoup4`: For HTML parsing in linking scripts.
 
 ## Development Environment
 - Linux-based environment (Julio's workspace).
