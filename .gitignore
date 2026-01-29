@@ -25,3 +25,10 @@ var/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Project
+.env
+archive/
+*.html
+*.xml
+response.xml

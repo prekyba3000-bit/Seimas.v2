@@ -9,7 +9,8 @@ STEPS = [
     ("2. Link VRK Identity", "link_vrk.py", True),
     ("3. Ingest Votes (Term 10)", "ingest_votes_v2.py", True),
     ("4. Sync Law Metadata", "ingest_legislation.py", False),
-    ("5. Repair Regex Errors", "repair_project_ids.py", False)
+    ("5. Repair Regex Errors", "repair_project_ids.py", False),
+    ("6. Ingest MP Assets", "ingest_assets.py", False)
 ]
 
 def main():
@@ -41,7 +42,16 @@ def main():
 
     total_duration = time.time() - total_start
     print(f"\n=== CHECKPOINT REACHED in {total_duration:.2f}s ===")
-    print("System is up-to-date. You may now relax.")
+    
+    # NEW: Automated Planner Sync
+    print("\n>>> Finalizing Session: Syncing with Taskade...")
+    try:
+        subprocess.run([sys.executable, "sync_planner.py"], check=True)
+    except subprocess.CalledProcessError:
+        print("[WARNING] Taskade sync failed. Check API status.")
+
+    print("\n=== THE ORCHESTRA HAS FINISHED ITS PERFORMANCE ===")
+    print("System is synchronized. You may now review progress in Taskade.")
 
 if __name__ == "__main__":
     main()

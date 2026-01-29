@@ -7,6 +7,8 @@
 - [x] NGI Zero Commons Fund Application (Submitted).
 - [x] Security & Accessibility Hardening (defusedxml, WCAG).
 - [x] Legacy Artifact Cleanup (Archived chaotic remnants).
+- [x] Full Project Dependency Suite Installed (pandas, bs4, defusedxml, etc.).
+- [x] Taskade Integrated Duo Setup (Installed v.4.6.14).
 
 ## In Progress
 - [/] NGI Zero Alignment Tasks (Accessibility & Security Audits).
