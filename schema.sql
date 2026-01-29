@@ -21,7 +21,12 @@ CREATE TABLE politicians (
     is_active BOOLEAN DEFAULT TRUE,
     term_end_date DATE,
     photo_url TEXT,
+    alt_text JSONB,
+    -- Multilingual alt text for accessibility
     bio TEXT,
+    -- Raw/Rich bio
+    plain_text_bio TEXT,
+    -- Simplified bio for screen readers
     last_updated TIMESTAMP DEFAULT NOW()
 );
 -- 2. Assets (VMI Data)
