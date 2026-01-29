@@ -1,7 +1,10 @@
-# System Patterns: Seimas v.2
+## Orchestration and Task Management
+The system follows a sequential pipeline pattern managed by an orchestrator, while development tasks are managed via **Beads (bd)**.
 
-## Architecture
-The system follows a sequential pipeline pattern managed by an orchestrator.
+### Development Workflow (Beads)
+- **Task Tracking**: All issues are versioned in `.beads/` as JSONL.
+- **Context Recovery**: Claude uses `bd setup claude` hooks to recover context before compaction.
+- **Ready State**: Tasks are filtered by `bd ready` to ensure dependencies are met.
 
 ### Pipeline Flow
 1. **Ingest MPs** (`ingest_seimas.py`): Fetch core identities.
