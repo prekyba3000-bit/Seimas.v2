@@ -1,39 +1,39 @@
-# NGI Zero Commons Fund: Proposal Outline (50k Entry Tier)
+# NGI Zero Commons Fund: Full Grant Narrative
 
-## 1. Project Title
-**Skaidrus Seimas** — An open-source transparency pipeline for democratic accountability.
+## 1. Project Title & Vision
+**Skaidrus Seimas** (Transparent Parliament) — A high-integrity, full-stack transparency platform designed to reclaim the public nature of Lithuanian parliamentary data.
 
-## 2. Problem Statement
-The Lithuanian citizenry lacks an accessible, linked, and searchable platform to monitor parliamentary activity. Existing data is fragmented across various institutional portals (Seimas, VRK, VMI), creating a high barrier for civic engagement and journalistic oversight.
+## 2. Problem Statement: The Transparency Gap
+The digital ecosystem in Lithuania faces a "market failure" in the accessibility of legislative data. While data exists, it is siloed within fragmented institutional portals using legacy formats. This prevents civic tech developers from building monitoring tools and inhibits citizens from holding their representatives accountable. Skaidrus Seimas serves as a corrective mechanism to deliver a "technology commons" for democratic oversight.
 
-## 3. Proposed Solution
-Create a unified "Internet Commons" for Lithuanian parliamentary data. This includes:
-- Robust data ingestion from official APIs.
-- Cross-identity linking of politicians across different state databases.
-- A public API (tRPC/REST) providing normalized transparency data.
-- A WCAG 2.1 AA compliant dashboard for data visualization.
+## 3. Project Objectives
+- **Data Sovereignty**: Provide a fully open-source (FOSS) pipeline to ingest, normalize, and link parliamentary data from Seimas, VRK (Electoral Commission), and VMI (Tax Inspectorate).
+- **Inclusivity (WCAG 2.1 AA)**: Ensure that transparency data is accessible to all citizens, including those with disabilities, through semantic HTML and screen-reader optimized data structures.
+- **Robust Security**: Implement defense-in-depth measures (like XXE protection via `defusedxml`) and undergo independent security verification.
 
-## 4. Work Plan (Milestones)
+## 4. Technical Approach
+The project employs a modular, "full-stack" architecture:
+- **Ingestion Layer**: Hardened Python scripts using `defusedxml` and parameterized SQL.
+- **Persistence Layer**: PostgreSQL with a specialized schema supporting multilingual accessibility metadata (JSONB).
+- **API Layer**: A type-safe tRPC/Next.js interface for data consumption.
 
-### Milestone 1: Data Infrastructure & Hardening
-- **Objective**: Finalize the core Python ingestion pipeline and PostgreSQL schema.
-- **Deliverables**: Open-source repository with full ingestion automation.
-- **Timeline**: 3 months.
+## 5. Work Packages & Budget Justification (Total: 50,000 EUR)
 
-### Milestone 2: Accessibility & API Layer
-- **Objective**: Develop the public-facing API and implement WCAG 2.1 AA compliant frontend components.
-- **Deliverables**: API documentation and a staging version of the transparency dashboard.
-- **Timeline**: 4 months.
+### WP1: Infrastructure & Data Hardening (15,000 EUR)
+- **Objective**: Finalize and push the core ingestion engine to a "production-ready" state.
+- **Justification**: This covers the heavy-lifting of data normalization and identity linking across Seimas and VRK. It includes the removal of hardcoded credentials and implementation of secure environment-based configurations.
 
-### Milestone 3: Security & Community Outreach
-- **Objective**: Undergo independent security audit and establish a community of civic tech contributors.
-- **Deliverables**: Security audit report and documentation for institutional reuse.
-- **Timeline**: 3 months.
+### WP2: Accessibility Hardening (15,000 EUR)
+- **Objective**: Implementation of WCAG 2.1 AA compliance across the entire user-facing stack.
+- **Justification**: Per NGI0 mandates, scaling beyond the 50k threshold requires verified accessibility. This work package funds the development of multilingual alt-text management (JSONB) and high-contrast, keyboard-navigable UI components. It includes the technical effort to map rich-text bios to plain-text alternatives for screen readers.
 
-## 5. Budget Summary (Total: 50,000.00 EUR)
-- **Personnel (Technical Development)**: 30,000 EUR
-- **Accessibility & Design**: 10,000 EUR
-- **Infrastructure & Audits**: 10,000 EUR
+### WP3: Security Review & Verification (10,000 EUR)
+- **Objective**: Internal and external security hardening.
+- **Justification**: Ensures the system is resilient against cyber threats. Costs cover the implementation of defensive parsing, audit logging, and preparation for the mandatory independent security audit required by NGI Zero for high-impact software.
 
-## 6. Strategic Impact
-This project will serve as a reusable blueprint for other EU member states' parliaments, directly contributing to European Digital Sovereignty by providing a transparent alternative to proprietary monitoring solutions.
+### WP4: Community & Documentation (10,000 EUR)
+- **Objective**: Establishing "Internet Commons" standards.
+- **Justification**: Financing the comprehensive documentation (Memory Bank) and the establishment of a contributor workflow (Beads/bd) to ensure the project remains sustainable and reusable by other institutional actors.
+
+## 6. Commitment to Openness
+In strict adherence to NGI Zero mandates, all outputs will be released under the MIT and GPL licenses, contributing directly to the global pool of digital public goods.

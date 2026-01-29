@@ -3,10 +3,10 @@ import psycopg2
 from psycopg2.extras import execute_values
 import unidecode
 import os
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from datetime import datetime
 
-DB_DSN = os.getenv("DB_DSN", "postgres://julio:jou@localhost:5432/transparency_db")
+DB_DSN = os.getenv("DB_DSN") 
 SEIMAS_API_URL = "https://apps.lrs.lt/sip/p2b.ad_seimo_nariai"
 
 def normalize(name):
@@ -21,8 +21,13 @@ def parse_date(date_str):
         return None
 
 def sync_db():
+    if not DB_DSN:
+        print("ERROR: DB_DSN environment variable not set.")
+        return
+
     print(f"Fetching XML from {SEIMAS_API_URL}...")
-    response = requests.get(SEIMAS_API_URL)
+    response = requests.get(SEIMAS_API_URL, timeout=30)
+    response.raise_for_status()
     root = ET.fromstring(response.content)
     
     mps = []
