@@ -1,0 +1,58 @@
+name: Daily Data Sync
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # Runs at 02:00 UTC every day
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    services:
+      # If you need a local DB for tests, you can add it here.
+      # But for actual sync, we connect to the production Railway DB.
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: transparency
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/checkout@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Orchestrator
+        env:
+          DB_DSN: ${{ secrets.DB_DSN }}
+          TASKADE_API_KEY: ${{ secrets.TASKADE_API_KEY }}
+          TASKADE_PROJECT_ID: ${{ secrets.TASKADE_PROJECT_ID }}
+          PYTHONPATH: .
+        run: python orchestrator.py
+
+      - name: Run Data Validation
+        env:
+          DB_DSN: ${{ secrets.DB_DSN }}
+        run: python scripts/validate_data.py

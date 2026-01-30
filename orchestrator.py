@@ -2,6 +2,17 @@ import subprocess
 import sys
 import time
 import os
+import logging
+
+# Configure Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger("ORCHESTRA")
 
 STEPS = [
     # (Display Name, Script Filename, Is_Critical)
@@ -14,44 +25,51 @@ STEPS = [
 ]
 
 def main():
-    print("\n=== STARTING TRANSPARENCY PIPELINE ===")
+    logger.info("=== STARTING TRANSPARENCY PIPELINE ===")
     total_start = time.time()
+    
+    pipeline_failed = False
     
     for name, script, critical in STEPS:
         if not os.path.exists(script):
-            print(f"[ERROR] Missing script: {script}")
+            logger.error(f"Missing script: {script}")
             if critical: sys.exit(1)
             continue
             
-        print(f"\n>>> Running: {name}...")
+        logger.info(f">>> Running: {name}...")
         step_start = time.time()
         
         try:
             # Run the script and wait for it to finish
-            result = subprocess.run([sys.executable, script], check=True)
+            subprocess.run([sys.executable, script], check=True)
             duration = time.time() - step_start
-            print(f"[OK] {name} completed in {duration:.2f}s")
+            logger.info(f"[OK] {name} completed in {duration:.2f}s")
             
-        except subprocess.CalledProcessError:
-            print(f"[FAIL] {name} encountered an error.")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"[FAIL] {name} encountered an error: {e}")
             if critical:
-                print("!!! Critical Failure. Pipeline Aborted. !!!")
+                logger.critical("!!! Critical Failure. Pipeline Aborted. !!!")
                 sys.exit(1)
             else:
-                print("...Warning: Non-critical step failed. Continuing.")
+                logger.warning("...Warning: Non-critical step failed. Continuing.")
+                pipeline_failed = True
 
     total_duration = time.time() - total_start
-    print(f"\n=== CHECKPOINT REACHED in {total_duration:.2f}s ===")
+    logger.info(f"=== CHECKPOINT REACHED in {total_duration:.2f}s ===")
     
-    # NEW: Automated Planner Sync
-    print("\n>>> Finalizing Session: Syncing with Taskade...")
+    # Automated Planner Sync
+    logger.info(">>> Finalizing Session: Syncing with Taskade...")
     try:
         subprocess.run([sys.executable, "sync_planner.py"], check=True)
     except subprocess.CalledProcessError:
-        print("[WARNING] Taskade sync failed. Check API status.")
+        logger.warning("Taskade sync failed. Check API status.")
 
-    print("\n=== THE ORCHESTRA HAS FINISHED ITS PERFORMANCE ===")
-    print("System is synchronized. You may now review progress in Taskade.")
+    logger.info("=== THE ORCHESTRA HAS FINISHED ITS PERFORMANCE ===")
+    
+    if pipeline_failed:
+        logger.warning("Pipeline finished with non-critical warnings.")
+    else:
+        logger.info("System is fully synchronized.")
 
 if __name__ == "__main__":
     main()
