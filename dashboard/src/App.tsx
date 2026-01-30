@@ -28,15 +28,17 @@ const App = () => {
     });
     const [activity, setActivity] = useState<any[]>([]);
 
+    const API_URL = import.meta.env.VITE_API_URL || '';
+
     useEffect(() => {
         // Fetch Stats
-        fetch('/api/stats')
+        fetch(`${API_URL}/api/stats`)
             .then(res => res.json())
             .then(data => setStats(data))
             .catch(err => console.error("Stats fetch failed", err));
 
         // Fetch Activity
-        fetch('/api/activity')
+        fetch(`${API_URL}/api/activity`)
             .then(res => res.json())
             .then(data => setActivity(data))
             .catch(err => console.error("Activity fetch failed", err));
