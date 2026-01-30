@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Users, UserMinus, Activity, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -20,6 +20,28 @@ const StatCard = ({ title, value, icon: Icon, trend }: any) => (
 );
 
 const App = () => {
+    const [stats, setStats] = useState({
+        total_mps: '...',
+        historical_votes: '...',
+        accuracy: '...',
+        active_rebels: '...'
+    });
+    const [activity, setActivity] = useState<any[]>([]);
+
+    useEffect(() => {
+        // Fetch Stats
+        fetch('/api/stats')
+            .then(res => res.json())
+            .then(data => setStats(data))
+            .catch(err => console.error("Stats fetch failed", err));
+
+        // Fetch Activity
+        fetch('/api/activity')
+            .then(res => res.json())
+            .then(data => setActivity(data))
+            .catch(err => console.error("Activity fetch failed", err));
+    }, []);
+
     return (
         <div className="min-h-screen p-8 lg:p-12 max-w-7xl mx-auto flex flex-col gap-12 bg-[#0a0a0c] text-white">
             {/* Header */}
@@ -40,10 +62,10 @@ const App = () => {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total MPs" value="141" icon={Users} />
-                <StatCard title="Historical Votes" value="488.7k" icon={Activity} trend="12.4" />
-                <StatCard title="Accuracy Rating" value="99.9%" icon={Globe} />
-                <StatCard title="Active Rebels" value="5" icon={UserMinus} />
+                <StatCard title="Total MPs" value={stats.total_mps} icon={Users} />
+                <StatCard title="Historical Votes" value={stats.historical_votes} icon={Activity} trend="12.4" />
+                <StatCard title="Accuracy Rating" value={stats.accuracy} icon={Globe} />
+                <StatCard title="Active Rebels" value={stats.active_rebels} icon={UserMinus} />
             </div>
 
             {/* Main Content */}
@@ -51,18 +73,20 @@ const App = () => {
                 <div className="lg:col-span-2 glass p-8">
                     <h2 className="text-xl font-semibold mb-6">Recent Activity Briefing</h2>
                     <div className="space-y-4">
-                        {[1, 2, 3].map(i => (
+                        {activity.length > 0 ? activity.map((item, i) => (
                             <div key={i} className="flex items-center justify-between p-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors rounded-xl">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-xs font-bold">M{i}</div>
+                                    <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-xs font-bold">MP</div>
                                     <div className="flex flex-col">
-                                        <span className="font-medium">Ingrida Šimonytė</span>
-                                        <span className="text-xs text-gray-500">Voted AGAINST Party Majority</span>
+                                        <span className="font-medium">{item.name}</span>
+                                        <span className="text-xs text-gray-500">{item.action}: {item.context}</span>
                                     </div>
                                 </div>
-                                <span className="text-xs text-blue-500 bg-blue-500/10 px-2 py-1 rounded">2m ago</span>
+                                <span className="text-xs text-blue-500 bg-blue-500/10 px-2 py-1 rounded">{item.time}</span>
                             </div>
-                        ))}
+                        )) : (
+                            <p className="text-gray-500 text-sm italic">Loading briefing data...</p>
+                        )}
                     </div>
                 </div>
 

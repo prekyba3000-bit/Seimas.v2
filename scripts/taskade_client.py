@@ -41,6 +41,48 @@ class TaskadeClient:
         print(f"Error creating project: {response.text}")
         return None
 
+    def get_projects(self, folder_id):
+        if not self.is_configured(): return []
+        url = f"{self.base_url}/folders/{folder_id}/projects"
+        response = requests.get(url, headers=self.headers)
+        if response.status_code == 200:
+            return response.json().get("items", [])
+        return []
+
+    def get_tasks(self, project_id):
+        if not self.is_configured(): return []
+        url = f"{self.base_url}/projects/{project_id}/tasks"
+        response = requests.get(url, headers=self.headers)
+        if response.status_code == 200:
+            return response.json().get("items", [])
+        return []
+
+    def get_blocks(self, project_id):
+        if not self.is_configured(): return []
+        url = f"{self.base_url}/projects/{project_id}/blocks"
+        response = requests.get(url, headers=self.headers)
+        if response.status_code == 200:
+            return response.json().get("items", [])
+        return []
+
+    def update_task(self, project_id, task_id, content=""):
+        if not self.is_configured(): return None
+        payload = {
+            "content": content,
+            "contentType": "text/markdown"
+        }
+        url = f"{self.base_url}/projects/{project_id}/tasks/{task_id}"
+        response = requests.put(url, headers=self.headers, json=payload)
+        if response.status_code in [200, 201]:
+            return response.json()
+        print(f"Error updating task: {response.text}")
+        return None
+
+    def update_project(self, project_id, title, content=""):
+        # This endpoint is reported 404 for metadata, but we might try a workaround if needed.
+        # For now, we prefer updating tasks for content stability.
+        return None
+
 if __name__ == "__main__":
     client = TaskadeClient()
     if not client.is_configured():

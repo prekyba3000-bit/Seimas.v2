@@ -45,31 +45,24 @@ def sync_memory_bank():
     task_file = "/home/julio/.gemini/antigravity/brain/b8a0f98c-0bb3-477d-a302-4ef9fc9676a5/task.md"
     pending_tasks = get_tasks_from_file(task_file)
     
-    # === NEW: Fetch Live Stats ===
+    # === DATA FETCHING ===
     db_dsn = os.getenv("DB_DSN")
-    stats_markdown = "### 📊 Live System Pulse\n"
+    mp_count, vote_count = 0, 0
+    controversy, rich_mps, top_attendance = [], [], []
+    total_active_votes = 0
+
     if db_dsn:
         try:
             conn = psycopg2.connect(db_dsn)
             cur = conn.cursor()
+            
+            # Stats
             cur.execute("SELECT COUNT(*) FROM politicians")
             mp_count = cur.fetchone()[0]
             cur.execute("SELECT COUNT(*) FROM votes")
             vote_count = cur.fetchone()[0]
-            stats_markdown += f"- **MPs Ingested**: {mp_count}\n"
-            stats_markdown += f"- **Votes Ingested**: {vote_count:,}\n"
-            stats_markdown += f"- **Status**: Orchestra Running 🎼\n"
-            cur.close()
-            conn.close()
-        except:
-            stats_markdown += "- *[Stats currently unavailable]*\n"
-    
-    # === NEW: Fetch Intelligence Briefing ===
-    intelligence_markdown = "\n### 🕵️ Intelligence Briefing\n"
-    if db_dsn:
-        try:
-            cur = conn.cursor()
-            # Top 3 High Attendance
+            
+            # Top Attendance
             cur.execute("""
                 SELECT p.display_name, ROUND(CAST(COUNT(CASE WHEN mv.vote_choice != 'Nedalyvavo' THEN 1 END) AS NUMERIC) / COUNT(mv.id) * 100, 1) as pct
                 FROM politicians p JOIN mp_votes mv ON p.id = mv.politician_id
@@ -77,16 +70,12 @@ def sync_memory_bank():
                 ORDER BY pct DESC LIMIT 3
             """)
             top_attendance = cur.fetchall()
-            intelligence_markdown += "**Top Attendance (Reliable):**\n"
-            for name, pct in top_attendance:
-                intelligence_markdown += f"- {name}: {pct}%\n"
             
-            # Count potential rebels (just a count for now)
+            # Participation
             cur.execute("SELECT COUNT(*) FROM mp_votes WHERE vote_choice IN ('Už', 'Prieš')")
             total_active_votes = cur.fetchone()[0]
-            intelligence_markdown += f"\n**Active Participation**: {total_active_votes:,} documented votes."
             
-            # NEW: Controversial Votes (Drama Detector)
+            # Controversy
             cur.execute("""
                 SELECT title, sitting_date, uz_count, pries_count, ABS(uz_count - pries_count) as margin
                 FROM (
@@ -99,12 +88,8 @@ def sync_memory_bank():
                 ORDER BY margin ASC, sitting_date DESC LIMIT 3
             """)
             controversy = cur.fetchall()
-            intelligence_markdown += "\n\n**🔥 Peak Drama (Tie-Breakers needed):**\n"
-            for title, date, uz, ps, margin in controversy:
-                title_clean = title.strip() or "[Unnamed Vote]"
-                intelligence_markdown += f"- **{title_clean[:50]}...** (Margin: {margin})\n"
             
-            # === NEW: Financial Stake Analysis (Follow the Money) ===
+            # Wealth
             cur.execute("""
                 SELECT p.display_name, a.securities_art_jewelry_eur
                 FROM politicians p JOIN mp_assets a ON p.id = a.politician_id
@@ -112,15 +97,48 @@ def sync_memory_bank():
                 ORDER BY a.securities_art_jewelry_eur DESC LIMIT 3
             """)
             rich_mps = cur.fetchall()
-            intelligence_markdown += "\n\n**💰 High Financial Stake (Securities > 100k€):**\n"
-            for name, amount in rich_mps:
-                intelligence_markdown += f"- {name}: {amount:,.0f} €\n"
             
             cur.close()
+            conn.close()
         except Exception as e:
-            intelligence_markdown += f"- *[Intelligence extraction failed: {str(e)}]*\n"
+            print(f">>> Data Fetch Error: {e}")
+
+    # === MIND MAP GENERATION (Hierarchical) ===
+    content = "# 🧠 Seimas v.2 Mind Map (Season 2)\n\n"
     
-    content = stats_markdown + intelligence_markdown + "\n### 📝 Project Roadmap\n" + "\n".join([f"- [ ] {t}" for t in pending_tasks])
+    # Node 1: System Vitality
+    content += "## 📊 System Pulse & Vitality\n"
+    content += f"  - **Scale**: {mp_count} MPs / {vote_count:,} Votes\n"
+    content += "  - **Health**: Orchestra Live 🎼\n"
+    content += "  - **Sync**: Taskade Season 2 Active\n\n"
+    
+    # Node 2: Legislative Drama (The Brain)
+    content += "## ⚖️ Legislative Drama (Hot Spots)\n"
+    if controversy:
+        for title, date, uz, ps, margin in controversy:
+            title_clean = title.strip() or "[Unnamed Vote]"
+            content += f"  - **{title_clean[:50]}...** (Margin: {margin})\n"
+            # Link High Stake MPs to these votes in the mind map
+            content += "    - **🚨 Conflict Watch**\n"
+            for name, amount in rich_mps:
+                content += f"      - {name} ({amount:,.0f} € stake)\n"
+    else:
+        content += "  - *Scan in progress...*\n\n"
+    
+    # Node 3: MP Intelligence
+    content += "## 🕵️ MP Performance Intelligence\n"
+    content += "  - **Attendance Leaders**\n"
+    for name, pct in top_attendance:
+        content += f"    - {name}: {pct}%\n"
+    content += f"  - **Participation**: {total_active_votes:,} active votes documented\n\n"
+    
+    # Node 4: Strategic Roadmap
+    content += "## 🚀 Strategic Roadmap\n"
+    for t in pending_tasks:
+        content += f"  - {t}\n"
+    
+    # Node 5: Intelligence Source
+    content += "\n---\n*Generated by the Seimas v.2 Conductor*"
     
     print(f">>> Syncing {len(pending_tasks)} pending tasks...")
     
@@ -133,10 +151,52 @@ def sync_memory_bank():
         print(">>> No folders found in workspace.")
         return
     
-    folder_id = folders[0]['id']
-    
-    print(f">>> Creating/Updating project in folder: {folders[0]['name']}")
-    project = client.create_project(folder_id, "Skaidrus Seimas v.2", content)
+    project_title = "Skaidrus Seimas v.2"
+    target_project_id = None
+    target_folder_id = None
+
+    print(f">>> Searching for existing project '{project_title}' across all folders...")
+    for folder in folders:
+        folder_id = folder['id']
+        folder_name = folder.get('name')
+        existing_projects = client.get_projects(folder_id)
+        print(f"  - Folder [{folder_name}]: {len(existing_projects)} projects found.")
+        for p in existing_projects:
+            p_title = p.get('title') or p.get('name')
+            p_id = p.get('id')
+            
+            # FORCE MATCH for debugging
+            if p_id == 'e4Ep8ghQro7PTJxm':
+                target_project_id = p_id
+                target_folder_id = folder_id
+                print(f"    - DEBUG Match: '{p_title}' (ID: {p_id})")
+                break
+        if target_project_id: break
+
+    if target_project_id:
+        print(f">>> SUCCESS: Found project '{target_project_id}'. Syncing content via Blocks/Tasks...")
+        blocks = client.get_blocks(target_project_id)
+        if blocks:
+             print(f">>> Found {len(blocks)} blocks in project.")
+             # print(f">>> First block debug: {blocks[0]}")
+             # A block acts as a container. Let's see if we can update the first block directly or its tasks.
+             tasks = client.get_tasks(target_project_id)
+             if tasks:
+                  main_task_id = tasks[0]['id']
+                  print(f">>> Updating main node (Task ID: {main_task_id})")
+                  result = client.update_task(target_project_id, main_task_id, content)
+                  project = {'item': {'id': target_project_id}} if result else None
+             else:
+                  print(">>> No tasks found. Creating new project as fallback.")
+                  project = client.create_project(target_folder_id, project_title, content)
+        else:
+             print(">>> No blocks found. Creating new project as fallback.")
+             project = client.create_project(target_folder_id, project_title, content)
+    else:
+        # Default to first folder if not found
+        target_folder_id = folders[0]['id']
+        print(f">>> Node not found. Creating NEW project in '{folders[0].get('name')}'...")
+        project = client.create_project(target_folder_id, project_title, content)
     
     if project and 'item' in project:
         print(f">>> SUCCESS: Project synced to Taskade!")
