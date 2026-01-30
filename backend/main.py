@@ -84,6 +84,14 @@ def get_activity():
     finally:
         conn.close()
 
+@app.get("/")
+def root():
+    return {
+        "name": "Skaidrus Seimas API",
+        "version": "2.0",
+        "endpoints": ["/health", "/api/stats", "/api/activity"]
+    }
+
 @app.get("/health")
 def health():
     return {"status": "ok", "orchestra": "conducting"}
