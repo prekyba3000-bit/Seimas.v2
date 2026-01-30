@@ -1,7 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import contextmanager
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from psycopg2.pool import ThreadedConnectionPool
 import os
 from typing import List, Dict
 
@@ -17,20 +19,43 @@ app.add_middleware(
 
 DB_DSN = os.getenv("DB_DSN")
 
+# Connection pool (lazy init)
+_pool = None
+
+def get_pool():
+    global _pool
+    if _pool is None and DB_DSN:
+        try:
+            _pool = ThreadedConnectionPool(2, 10, DB_DSN)
+        except Exception as e:
+            print(f"Failed to create connection pool: {e}")
+    return _pool
+
+@contextmanager
 def get_db_conn():
+    """Context manager for database connections with automatic return to pool."""
+    pool = get_pool()
+    if not pool:
+        yield None
+        return
+    conn = None
     try:
-        return psycopg2.connect(DB_DSN, cursor_factory=RealDictCursor)
+        conn = pool.getconn()
+        conn.cursor_factory = RealDictCursor
+        yield conn
     except Exception as e:
         print(f"Database connection error: {e}")
-        return None
+        yield None
+    finally:
+        if conn:
+            pool.putconn(conn)
 
 @app.get("/api/stats")
 def get_stats():
-    conn = get_db_conn()
-    if not conn:
-        raise HTTPException(status_code=500, detail="Database connection failed")
-    
-    try:
+    with get_db_conn() as conn:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+        
         with conn.cursor() as cur:
             # Total MPs
             cur.execute("SELECT count(*) as count FROM politicians")
@@ -50,16 +75,13 @@ def get_stats():
                 "accuracy": "99.9%",
                 "active_rebels": rebel_count
             }
-    finally:
-        conn.close()
 
 @app.get("/api/activity")
 def get_activity():
-    conn = get_db_conn()
-    if not conn:
-        raise HTTPException(status_code=500, detail="Database connection failed")
-    
-    try:
+    with get_db_conn() as conn:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+        
         with conn.cursor() as cur:
             # Get 5 recent "interesting" events (e.g. from mp_votes)
             cur.execute("""
@@ -81,8 +103,6 @@ def get_activity():
                     "time": str(row["sitting_date"])
                 })
             return activity
-    finally:
-        conn.close()
 
 @app.get("/")
 def root():
