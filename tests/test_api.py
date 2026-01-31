@@ -7,7 +7,11 @@ async def test_health_endpoint():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "orchestra": "conducting"}
+    data = response.json()
+    # Health check now includes DB status
+    assert data["orchestra"] == "conducting"
+    assert "status" in data
+    assert "database" in data
 
 @pytest.mark.asyncio
 async def test_stats_endpoint_error_no_db():

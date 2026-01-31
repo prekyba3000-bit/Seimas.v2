@@ -5,6 +5,7 @@ from psycopg2.extras import execute_values
 import unidecode
 import os
 import re
+from utils import fetch_with_retry
 
 # --- Configuration ---
 DB_DSN = os.getenv("DB_DSN") 
@@ -28,10 +29,7 @@ def fetch_vrk_candidates():
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
-    resp = requests.get(VRK_HTML_URL, headers=headers)
-    if resp.status_code != 200:
-        print(f"FAILED to fetch VRK data. Status: {resp.status_code}")
-        return []
+    resp = fetch_with_retry(VRK_HTML_URL, headers=headers)
     
     soup = BeautifulSoup(resp.content, 'lxml')
     candidates = []

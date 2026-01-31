@@ -5,13 +5,15 @@ import unidecode
 import os
 import defusedxml.ElementTree as ET
 from datetime import datetime
+from utils import fetch_with_retry
 
 DB_DSN = os.getenv("DB_DSN") 
 SEIMAS_API_URL = "https://apps.lrs.lt/sip/p2b.ad_seimo_nariai"
 
 def normalize(name):
     if not name: return ""
-    return unidecode.unidecode(name).lower().strip()
+    clean = unidecode.unidecode(name).lower().strip()
+    return " ".join(clean.split())  # Collapse multiple spaces
 
 def parse_date(date_str):
     if not date_str: return None
@@ -26,8 +28,7 @@ def sync_db():
         return
 
     print(f"Fetching XML from {SEIMAS_API_URL}...")
-    response = requests.get(SEIMAS_API_URL, timeout=30)
-    response.raise_for_status()
+    response = fetch_with_retry(SEIMAS_API_URL, timeout=30)
     root = ET.fromstring(response.content)
     
     mps = []

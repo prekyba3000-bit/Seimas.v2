@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, UserMinus, Activity, Globe } from 'lucide-react';
+import { LayoutDashboard, Users, UserMinus, Activity, Globe, GitCompare } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ComparisonView from './ComparisonView';
+import MpsListView from './MpsListView';
+import MpProfileView from './MpProfileView';
 
 const StatCard = ({ title, value, icon: Icon, trend }: any) => (
     <motion.div
@@ -19,7 +22,8 @@ const StatCard = ({ title, value, icon: Icon, trend }: any) => (
     </motion.div>
 );
 
-const App = () => {
+// Dashboard View Component
+const DashboardView = () => {
     const [stats, setStats] = useState({
         total_mps: '...',
         historical_votes: '...',
@@ -31,13 +35,11 @@ const App = () => {
     const API_URL = import.meta.env.VITE_API_URL || '';
 
     useEffect(() => {
-        // Fetch Stats
         fetch(`${API_URL}/api/stats`)
             .then(res => res.json())
             .then(data => setStats(data))
             .catch(err => console.error("Stats fetch failed", err));
 
-        // Fetch Activity
         fetch(`${API_URL}/api/activity`)
             .then(res => res.json())
             .then(data => setActivity(data))
@@ -45,23 +47,7 @@ const App = () => {
     }, []);
 
     return (
-        <div className="min-h-screen p-8 lg:p-12 max-w-7xl mx-auto flex flex-col gap-12 bg-[#0a0a0c] text-white">
-            {/* Header */}
-            <header className="flex justify-between items-center">
-                <div className="flex flex-col">
-                    <h1 className="text-4xl font-bold flex items-center gap-3">
-                        Skaidrus Seimas <span className="text-blue-500 text-sm bg-blue-500/20 px-3 py-1 rounded-full border border-blue-500/30">v.2</span>
-                    </h1>
-                    <p className="text-gray-400 mt-2">Historical Transparency & MP Intelligence Dashboard</p>
-                </div>
-                <div className="flex gap-4">
-                    <div className="flex items-center gap-2 bg-green-500/10 text-green-400 border border-green-500/20 px-4 py-2 rounded-full text-sm">
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                        Orchestra Live
-                    </div>
-                </div>
-            </header>
-
+        <>
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Total MPs" value={stats.total_mps} icon={Users} />
@@ -118,8 +104,81 @@ const App = () => {
                     </div>
                 </div>
             </div>
+        </>
+    );
+};
+
+// Route helper
+const parseRoute = (hash: string) => {
+    if (hash.startsWith('#/mps/')) {
+        const id = hash.replace('#/mps/', '');
+        return { view: 'mp-profile', id };
+    }
+    if (hash === '#/mps') return { view: 'mps-list' };
+    if (hash === '#/compare') return { view: 'compare' };
+    return { view: 'dashboard' };
+};
+
+// Main App with Routing
+const App = () => {
+    const [route, setRoute] = useState(window.location.hash || '#/');
+
+    useEffect(() => {
+        const handleHashChange = () => setRoute(window.location.hash || '#/');
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, []);
+
+    const { view, id } = parseRoute(route);
+
+    // Navigation state
+    const navItems = [
+        { href: '#/', label: 'Dashboard', icon: LayoutDashboard, key: 'dashboard' },
+        { href: '#/mps', label: 'MPs', icon: Users, key: 'mps-list' },
+        { href: '#/compare', label: 'Compare', icon: GitCompare, key: 'compare' },
+    ];
+
+    return (
+        <div className="min-h-screen p-8 lg:p-12 max-w-7xl mx-auto flex flex-col gap-12 bg-[#0a0a0c] text-white">
+            {/* Header */}
+            <header className="flex justify-between items-center flex-wrap gap-4">
+                <div className="flex flex-col">
+                    <h1 className="text-4xl font-bold flex items-center gap-3">
+                        <a href="#/" className="hover:text-blue-400 transition-colors">Skaidrus Seimas</a>
+                        <span className="text-blue-500 text-sm bg-blue-500/20 px-3 py-1 rounded-full border border-blue-500/30">v.2</span>
+                    </h1>
+                    <p className="text-gray-400 mt-2">Historical Transparency & MP Intelligence Dashboard</p>
+                </div>
+                <div className="flex gap-2 items-center flex-wrap">
+                    {/* Navigation */}
+                    {navItems.map(({ href, label, icon: Icon, key }) => (
+                        <a
+                            key={key}
+                            href={href}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-colors ${view === key || (view === 'mp-profile' && key === 'mps-list')
+                                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                    : 'text-gray-400 hover:text-white'
+                                }`}
+                        >
+                            <Icon className="w-4 h-4" />
+                            {label}
+                        </a>
+                    ))}
+                    <div className="flex items-center gap-2 bg-green-500/10 text-green-400 border border-green-500/20 px-4 py-2 rounded-full text-sm">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                        Live
+                    </div>
+                </div>
+            </header>
+
+            {/* Route Content */}
+            {view === 'compare' && <ComparisonView />}
+            {view === 'mps-list' && <MpsListView />}
+            {view === 'mp-profile' && id && <MpProfileView mpId={id} />}
+            {view === 'dashboard' && <DashboardView />}
         </div>
     );
 };
 
 export default App;
+
