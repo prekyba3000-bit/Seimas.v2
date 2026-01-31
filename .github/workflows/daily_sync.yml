@@ -9,28 +9,12 @@ jobs:
   sync:
     runs-on: ubuntu-latest
 
-    services:
-      # If you need a local DB for tests, you can add it here.
-      # But for actual sync, we connect to the production Railway DB.
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: transparency
-          POSTGRES_PASSWORD: password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/checkout@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
@@ -47,8 +31,7 @@ jobs:
       - name: Run Orchestrator
         env:
           DB_DSN: ${{ secrets.DB_DSN }}
-          TASKADE_API_KEY: ${{ secrets.TASKADE_API_KEY }}
-          TASKADE_PROJECT_ID: ${{ secrets.TASKADE_PROJECT_ID }}
+          TASKADE_TOKEN: ${{ secrets.TASKADE_TOKEN }}
           PYTHONPATH: .
         run: python orchestrator.py
 
