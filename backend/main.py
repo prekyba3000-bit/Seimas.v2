@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import contextmanager
 import psycopg2
@@ -10,6 +11,15 @@ from typing import List, Dict
 from collections import defaultdict
 
 app = FastAPI(title="Skaidrus Seimas API")
+
+# Suppress browser 404s for common static files
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    return Response(status_code=204)
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots():
+    return Response("User-agent: *\nDisallow: /api/", media_type="text/plain")
 
 # Enable CORS for production and local development
 ALLOWED_ORIGINS = [
