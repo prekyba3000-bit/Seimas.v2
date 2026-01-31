@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MpProfileView from './MpProfileView';
+import GamifiedProfileView from './GamifiedProfileView';
 import VotesListView from './VotesListView';
 import VoteDetailView from './VoteDetailView';
 import { LayoutDashboard, Users, FileText, GitCompare, UserMinus, Activity, Globe } from 'lucide-react';
@@ -115,6 +116,11 @@ const parseRoute = (hash: string) => {
     }
     if (hash === '#/mps') return { view: 'mps-list' };
 
+    if (hash.startsWith('#/game/')) {
+        const id = hash.replace('#/game/', '');
+        return { view: 'gamified-profile', id };
+    }
+
     if (hash.startsWith('#/votes/')) {
         const id = hash.replace('#/votes/', '');
         return { view: 'vote-detail', id };
@@ -163,10 +169,10 @@ const App = () => {
                             key={key}
                             href={href}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-colors ${view === key ||
-                                    (view === 'mp-profile' && key === 'mps-list') ||
-                                    (view === 'vote-detail' && key === 'votes-list')
-                                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                                    : 'text-gray-400 hover:text-white'
+                                (view === 'mp-profile' && key === 'mps-list') ||
+                                (view === 'vote-detail' && key === 'votes-list')
+                                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                : 'text-gray-400 hover:text-white'
                                 }`}
                         >
                             <Icon className="w-4 h-4" />
@@ -184,6 +190,7 @@ const App = () => {
             {view === 'compare' && <ComparisonView />}
             {view === 'mps-list' && <MpsListView />}
             {view === 'mp-profile' && id && <MpProfileView mpId={id} />}
+            {view === 'gamified-profile' && id && <GamifiedProfileView mpId={id} />}
             {view === 'votes-list' && <VotesListView />}
             {view === 'vote-detail' && id && <VoteDetailView voteId={id} />}
             {view === 'dashboard' && <DashboardView />}
