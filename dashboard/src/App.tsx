@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, UserMinus, Activity, Globe, GitCompare } from 'lucide-react';
-import { motion } from 'framer-motion';
-import ComparisonView from './ComparisonView';
-import MpsListView from './MpsListView';
 import MpProfileView from './MpProfileView';
+import VotesListView from './VotesListView';
+import VoteDetailView from './VoteDetailView';
+import { LayoutDashboard, Users, FileText, GitCompare, UserMinus, Activity, Globe } from 'lucide-react';
 
 const StatCard = ({ title, value, icon: Icon, trend }: any) => (
     <motion.div
@@ -115,6 +114,13 @@ const parseRoute = (hash: string) => {
         return { view: 'mp-profile', id };
     }
     if (hash === '#/mps') return { view: 'mps-list' };
+
+    if (hash.startsWith('#/votes/')) {
+        const id = hash.replace('#/votes/', '');
+        return { view: 'vote-detail', id };
+    }
+    if (hash === '#/votes') return { view: 'votes-list' };
+
     if (hash === '#/compare') return { view: 'compare' };
     return { view: 'dashboard' };
 };
@@ -135,6 +141,7 @@ const App = () => {
     const navItems = [
         { href: '#/', label: 'Dashboard', icon: LayoutDashboard, key: 'dashboard' },
         { href: '#/mps', label: 'MPs', icon: Users, key: 'mps-list' },
+        { href: '#/votes', label: 'Votes', icon: FileText, key: 'votes-list' },
         { href: '#/compare', label: 'Compare', icon: GitCompare, key: 'compare' },
     ];
 
@@ -155,7 +162,9 @@ const App = () => {
                         <a
                             key={key}
                             href={href}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-colors ${view === key || (view === 'mp-profile' && key === 'mps-list')
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-colors ${view === key ||
+                                    (view === 'mp-profile' && key === 'mps-list') ||
+                                    (view === 'vote-detail' && key === 'votes-list')
                                     ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                                     : 'text-gray-400 hover:text-white'
                                 }`}
@@ -175,6 +184,8 @@ const App = () => {
             {view === 'compare' && <ComparisonView />}
             {view === 'mps-list' && <MpsListView />}
             {view === 'mp-profile' && id && <MpProfileView mpId={id} />}
+            {view === 'votes-list' && <VotesListView />}
+            {view === 'vote-detail' && id && <VoteDetailView voteId={id} />}
             {view === 'dashboard' && <DashboardView />}
         </div>
     );

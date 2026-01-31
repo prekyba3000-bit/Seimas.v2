@@ -374,6 +374,90 @@ def health():
         "database": db_status
     }
 
+@app.get("/api/votes")
+def get_votes(limit: int = 50, offset: int = 0):
+    """List recent votes."""
+    with get_db_conn() as conn:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+        
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT id, sitting_date, title, result_type
+                FROM votes
+                ORDER BY sitting_date DESC, created_at DESC
+                LIMIT %s OFFSET %s
+            """, (limit, offset))
+            rows = cur.fetchall()
+            
+            return [
+                {
+                    "id": str(row["id"]),
+                    "date": str(row["sitting_date"]),
+                    "title": row["title"],
+                    "result": row["result_type"]
+                }
+                for row in rows
+            ]
+
+@app.get("/api/votes/{vote_id}")
+def get_vote(vote_id: str):
+    """Get details for a single vote."""
+    with get_db_conn() as conn:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+        
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Fetch vote details
+            cur.execute("""
+                SELECT id, sitting_date, title, description, url, result_type
+                FROM votes
+                WHERE id = %s::integer
+            """, (vote_id,))
+            vote = cur.fetchone()
+            
+            if not vote:
+                raise HTTPException(status_code=404, detail="Vote not found")
+            
+            # Fetch vote results (individual MP votes)
+            cur.execute("""
+                SELECT p.display_name, p.current_party, mv.vote_choice
+                FROM mp_votes mv
+                JOIN politicians p ON mv.politician_id = p.id
+                WHERE mv.vote_id = %s::integer
+                ORDER BY p.current_party, p.display_name
+            """, (vote_id,))
+            votes = cur.fetchall()
+            
+            # Calculate aggregate stats
+            stats = defaultdict(int)
+            party_stats = defaultdict(lambda: defaultdict(int))
+            
+            mp_votes = []
+            for row in votes:
+                choice = row["vote_choice"]
+                party = row["current_party"]
+                stats[choice] += 1
+                party_stats[party][choice] += 1
+                
+                mp_votes.append({
+                    "name": row["display_name"],
+                    "party": party,
+                    "choice": choice
+                })
+            
+            return {
+                "id": str(vote["id"]),
+                "date": str(vote["sitting_date"]),
+                "title": vote["title"],
+                "description": vote["description"],
+                "url": vote["url"],
+                "result_type": vote["result_type"],
+                "stats": stats,
+                "party_stats": party_stats,
+                "votes": mp_votes
+            }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
