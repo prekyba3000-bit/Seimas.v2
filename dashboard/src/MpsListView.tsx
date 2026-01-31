@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Search, Building2, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
+import { API_URL } from './config';
 
 // Party color mapping
 const PARTY_COLORS: Record<string, string> = {

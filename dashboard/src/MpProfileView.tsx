@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Building2, Vote, TrendingUp, Calendar, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
+import { API_URL } from './config';
 
 // Stat Card for profile
 const ProfileStat = ({ label, value, icon: Icon }: { label: string; value: string; icon: any }) => (
@@ -32,31 +31,14 @@ const VoteBadge = ({ choice }: { choice: string }) => {
     );
 };
 
-// Main MP Profile View
-const MpProfileView = ({ mpId }: { mpId: string }) => {
-    const [mp, setMp] = useState<any>(null);
-    const [votes, setVotes] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+interface MpProfileLayoutProps {
+    mp: any;
+    votes: any[];
+    loading?: boolean;
+}
 
-    useEffect(() => {
-        if (!mpId) return;
-
-        // Fetch MP details and recent votes
-        Promise.all([
-            fetch(`${API_URL}/api/mps/${mpId}`).then(r => r.ok ? r.json() : null),
-            fetch(`${API_URL}/api/mps/${mpId}/votes`).then(r => r.ok ? r.json() : [])
-        ])
-            .then(([mpData, votesData]) => {
-                setMp(mpData);
-                setVotes(votesData);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error('Failed to load MP', err);
-                setLoading(false);
-            });
-    }, [mpId]);
-
+// Pure Presentational Component
+export const MpProfileLayout = ({ mp, votes, loading = false }: MpProfileLayoutProps) => {
     if (loading) {
         return (
             <div className="glass p-12 text-center text-gray-400">
@@ -161,6 +143,33 @@ const MpProfileView = ({ mpId }: { mpId: string }) => {
             </div>
         </motion.div>
     );
+};
+
+// Container Component (Data Fetching)
+const MpProfileView = ({ mpId }: { mpId: string }) => {
+    const [mp, setMp] = useState<any>(null);
+    const [votes, setVotes] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!mpId) return;
+
+        Promise.all([
+            fetch(`${API_URL}/api/mps/${mpId}`).then(r => r.ok ? r.json() : null),
+            fetch(`${API_URL}/api/mps/${mpId}/votes`).then(r => r.ok ? r.json() : [])
+        ])
+            .then(([mpData, votesData]) => {
+                setMp(mpData);
+                setVotes(votesData);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error('Failed to load MP', err);
+                setLoading(false);
+            });
+    }, [mpId]);
+
+    return <MpProfileLayout mp={mp} votes={votes} loading={loading} />;
 };
 
 export default MpProfileView;

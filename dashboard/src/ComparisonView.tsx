@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, GitCompare, TrendingUp, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const API_URL = import.meta.env.VITE_API_URL || '';
+import { API_URL } from './config';
 
 // MP Selector Combobox
 const MpSelector = ({ mps, selected, onSelect, placeholder }) => {

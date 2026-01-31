@@ -6,6 +6,7 @@ import { LayoutDashboard, Users, FileText, GitCompare, UserMinus, Activity, Glob
 import { motion } from 'framer-motion';
 import ComparisonView from './ComparisonView';
 import MpsListView from './MpsListView';
+import { API_URL } from './config';
 
 const StatCard = ({ title, value, icon: Icon, trend }: any) => (
     <motion.div
@@ -34,7 +35,7 @@ const DashboardView = () => {
     });
     const [activity, setActivity] = useState<any[]>([]);
 
-    const API_URL = import.meta.env.VITE_API_URL || '';
+
 
     useEffect(() => {
         fetch(`${API_URL}/api/stats`)

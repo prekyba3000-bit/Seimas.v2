@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Search, Calendar, CheckCircle, XCircle, AlertCircle, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { API_URL } from './config';
 
-const API_URL = import.meta.env.VITE_API_URL || '';
-
-interface Vote {
+export interface Vote {
     id: string;
     date: string;
     title: string;
     result: string;
 }
 
-const VoteCard = ({ vote, onClick }: { vote: Vote; onClick: () => void }) => {
+export const VoteCard = ({ vote, onClick }: { vote: Vote; onClick: () => void }) => {
     const getResultIcon = (result: string) => {
         const r = result.toLowerCase();
         if (r.includes('priimta') || r.includes('pritarta')) return <CheckCircle className="w-5 h-5 text-green-500" />;
