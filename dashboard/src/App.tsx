@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import MpProfileView from './MpProfileView';
-import GamifiedProfileView from './GamifiedProfileView';
 import VotesListView from './VotesListView';
 import VoteDetailView from './VoteDetailView';
 import { LayoutDashboard, Users, FileText, GitCompare, UserMinus, Activity, Globe } from 'lucide-react';
+import { motion } from 'framer-motion';
+import ComparisonView from './ComparisonView';
+import MpsListView from './MpsListView';
 
 const StatCard = ({ title, value, icon: Icon, trend }: any) => (
     <motion.div
@@ -116,11 +118,6 @@ const parseRoute = (hash: string) => {
     }
     if (hash === '#/mps') return { view: 'mps-list' };
 
-    if (hash.startsWith('#/game/')) {
-        const id = hash.replace('#/game/', '');
-        return { view: 'gamified-profile', id };
-    }
-
     if (hash.startsWith('#/votes/')) {
         const id = hash.replace('#/votes/', '');
         return { view: 'vote-detail', id };
@@ -190,7 +187,6 @@ const App = () => {
             {view === 'compare' && <ComparisonView />}
             {view === 'mps-list' && <MpsListView />}
             {view === 'mp-profile' && id && <MpProfileView mpId={id} />}
-            {view === 'gamified-profile' && id && <GamifiedProfileView mpId={id} />}
             {view === 'votes-list' && <VotesListView />}
             {view === 'vote-detail' && id && <VoteDetailView voteId={id} />}
             {view === 'dashboard' && <DashboardView />}
@@ -199,4 +195,3 @@ const App = () => {
 };
 
 export default App;
-

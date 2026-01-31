@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Building2, Vote, TrendingUp, Calendar, ExternalLink, Gamepad2 } from 'lucide-react';
+import { ArrowLeft, Building2, Vote, TrendingUp, Calendar, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
@@ -110,25 +110,15 @@ const MpProfileView = ({ mpId }: { mpId: string }) => {
                         </span>
                     )}
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    <a
-                        href={`#/game/${mpId}`}
-                        className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg text-sm transition-colors"
-                        title="View Concept Art UI"
-                    >
-                        <Gamepad2 className="w-4 h-4" />
-                        <span className="hidden md:inline">Sci-Fi Mode</span>
-                    </a>
-                    <a
-                        href={`https://www.lrs.lt/sip/portal.show?p_r=35299&p_k=1&p_a=seimo_narys&p_asm_id=${mp.seimas_id || ''}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 glass hover:bg-white/10 rounded-lg text-sm transition-colors"
-                    >
-                        <ExternalLink className="w-4 h-4" />
-                        Official Profile
-                    </a>
-                </div>
+                <a
+                    href={`https://www.lrs.lt/sip/portal.show?p_r=35299&p_k=1&p_a=seimo_narys&p_asm_id=${mp.seimas_id || ''}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 glass hover:bg-white/10 rounded-lg text-sm transition-colors"
+                >
+                    <ExternalLink className="w-4 h-4" />
+                    Official Profile
+                </a>
             </div>
 
             {/* Stats */}
