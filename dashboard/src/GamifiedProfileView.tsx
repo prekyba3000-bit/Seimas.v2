@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Zap, Activity, Radio, Cpu, Lock, Crosshair, Terminal, ChevronLeft } from 'lucide-react';
+import { Shield, Zap, Activity, Cpu, Lock, Terminal, ChevronLeft } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -10,11 +10,12 @@ interface MP {
     name: string;
     photo: string;
     party: string;
-    stats: {
+    stats?: {
         attendance: number;
         loyalty: number;
         votes_participated: number;
     };
+    vote_count?: number;
     recent_votes: any[];
 }
 
@@ -124,19 +125,20 @@ const GamifiedProfileView = ({ mpId }: { mpId: string }) => {
     if (!mp) return <div>Data Corrupted.</div>;
 
     // Mock RPG Stats derived from real data
-    const hp = mp.stats.attendance; // Attendance = Health
-    const mana = mp.stats.loyalty; // Loyalty = Trust/Mana
-    const xp = mp.stats.votes_participated;
+    const stats = mp.stats || { attendance: 0, loyalty: 0, votes_participated: 0 };
+    const hp = stats.attendance || 50;
+    const mana = stats.loyalty || 50;
+    const xp = stats.votes_participated || mp.vote_count || 0;
     const level = Math.floor(xp / 100) + 1;
 
-    // Mock Radar Stats (Deterministic pseudo-random based on ID)
-    const idNum = parseInt(mp.id.replace(/\D/g, '') || '0', 10);
+    // Mock Radar Stats
+    const idNum = parseInt((mp.id || '').replace(/\D/g, '') || '0', 10);
     const radarStats = [
-        (idNum % 40) + 60, // Strategy
-        mp.stats.attendance, // Integrity
-        (idNum * 3 % 40) + 50, // Funding
-        (idNum * 7 % 30) + 70, // Oratory
-        mp.stats.loyalty // Popularity
+        (idNum % 40) + 60,
+        stats.attendance || 60,
+        (idNum * 3 % 40) + 50,
+        (idNum * 7 % 30) + 70,
+        stats.loyalty || 60
     ];
 
     return (
@@ -172,7 +174,7 @@ const GamifiedProfileView = ({ mpId }: { mpId: string }) => {
                         NAT. SENTIMENT: +0.4% ▲
                     </div>
                     <div className="flex items-center gap-2 text-blue-400">
-                        <Radio className="w-4 h-4 animate-pulse" />
+                        <Activity className="w-4 h-4 animate-pulse" />
                         NETWAY STATUS: ONLINE
                     </div>
                     <div className="text-red-500 font-bold animate-pulse">
