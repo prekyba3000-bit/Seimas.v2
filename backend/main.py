@@ -22,9 +22,11 @@ def robots():
     return Response("User-agent: *\nDisallow: /api/", media_type="text/plain")
 
 # Enable CORS for production and local development
+# Enable CORS for production and local development
+# Allow any Railway deployment (dashboard or otherwise) to access the API
+ALLOWED_ORIGIN_REGEX = r"https://.*\.up\.railway\.app"
+
 ALLOWED_ORIGINS = [
-    "https://seimasv2-dashboard-production.up.railway.app",  # Production dashboard
-    "https://seimasv2-dashboard.up.railway.app",  # Alternate production
     "http://localhost:5173",  # Vite dev server
     "http://localhost:3000",  # Alternate dev port
 ]
@@ -32,6 +34,7 @@ ALLOWED_ORIGINS = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=ALLOWED_ORIGIN_REGEX,
     allow_methods=["GET", "OPTIONS"],  # Read-only API
     allow_headers=["*"],
     allow_credentials=True,
