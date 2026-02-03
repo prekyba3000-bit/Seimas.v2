@@ -19,3 +19,6 @@ _bmad
 _bmad-output
 .agent
 .claude
+dashboard/node_modules/
+dashboard/storybook-static/
+dashboard/dist/
