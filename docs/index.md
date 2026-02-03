@@ -1,33 +1,97 @@
-# Skaidrus Seimas - Project Documentation
+# Skaidrus Seimas - Project Documentation Index
 
-**Project Type:** Transparency Dashboard (Web Application)
-**Status:** Active Development (Brownfield)
+> **Generated**: 2026-02-04  
+> **Workflow**: BMAD `document-project`  
+> **Scan Level**: Full Initial Scan
 
-## 📌 Executive Summary
-"Skaidrus Seimas" (Transparent Parliament) is a data visualization platform designed to illuminate the voting records, attendance, and asset declarations of Lithuanian Parliament (Seimas) members. By providing pairwise comparison tools and historical data analysis, it aims to increase political accountability.
+## 📋 Documentation Contents
 
-## 🏗 Architecture
+### Core Documentation
 
-### Frontend (`dashboard/`)
-- **Technology:** React, Vite, Tailwind CSS, Framer Motion
-- **Key Views:**
-  - `ComparisonView`: Matrix view of MP voting alignment.
-  - `MpProfileView`: Individual MP detailed statistics.
-  - `VotesListView`: Searchable legislation history.
+| Document | Description | Path |
+|----------|-------------|------|
+| **Project Context** | Critical rules and patterns for AI agents | [project-context.md](./project-context.md) |
+| **Database Schema** | SQL schema definition | [../schema.sql](../schema.sql) |
 
-### Backend (`backend/`)
-- **Technology:** FastAPI, PostgreSQL (psycopg2)
-- **Status:** Functional API with rate limiting and connection pooling.
+### Configuration Files
 
-### Data Pipelines (`scripts/`)
-- **Ingestion:** Python scripts (`ingest_*.py`) fetch data from external sources (LRS/VRK).
-- **Orchestration:** `orchestrator.py` manages the daily sync.
+| File | Purpose |
+|------|---------|
+| [nixpacks.toml](../nixpacks.toml) | Railway deployment configuration |
+| [railway.json](../railway.json) | Railway service settings |
+| [requirements.txt](../requirements.txt) | Python dependencies |
+| [dashboard/package.json](../dashboard/package.json) | Node.js dependencies |
 
-## 📂 Documentation Index
-- [Accessibility Plan](compliance/ACCESSIBILITY_PLAN.md)
-- [Security Review](compliance/SECURITY_REVIEW.md)
-- [Funding Proposal](funding/PROPOSAL_OUTLINE.md)
+---
 
-## 📝 BMAD Integration
-- **Classification:** Brownfield
-- **Tracking:** Active (repo ID fixed)
+## 🏛️ Architecture Summary
+
+**Type**: Monolithic full-stack web application
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Railway Deploy                       │
+├─────────────────────────────────────────────────────────┤
+│  FastAPI (Python)                                       │
+│  ├── /api/* → REST endpoints                            │
+│  └── /* → Static React SPA (dashboard/dist/)            │
+├─────────────────────────────────────────────────────────┤
+│  PostgreSQL (Railway managed)                           │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📦 Components
+
+### Backend (`/backend`)
+- **Framework**: FastAPI
+- **Database**: PostgreSQL with `psycopg2` connection pooling
+- **Entry Point**: `backend/main.py`
+
+### Frontend (`/dashboard`)
+- **Framework**: React 19 + Vite
+- **Styling**: Tailwind CSS 4
+- **Testing**: Storybook 8.5 + Vitest
+
+### Data Pipeline (root `*.py` scripts)
+- **Orchestrator**: `orchestrator.py`
+- **MP Ingestion**: `ingest_seimas.py`
+- **Vote Ingestion**: `ingest_votes_v2.py`
+- **Asset Ingestion**: `ingest_assets.py`
+
+---
+
+## 🎯 Key Features
+
+1. **MP Comparison Tool** - Compare voting records of 2-4 MPs
+2. **Vote Explorer** - Browse and filter parliamentary votes
+3. **MP Profiles** - Individual politician pages with voting history
+4. **Dashboard** - Real-time statistics and activity feed
+
+---
+
+## 📂 Directory Map
+
+```
+transparency_project/
+├── backend/              # Python FastAPI backend
+├── dashboard/            # React/Vite frontend
+│   ├── src/
+│   │   ├── views/        # Page components
+│   │   ├── components/   # Reusable UI
+│   │   └── stories/      # Storybook
+│   └── tests/            # Frontend tests
+├── docs/                 # Documentation
+├── tests/                # Backend tests
+├── scripts/              # Utility scripts
+├── _bmad/                # BMAD methodology config
+└── _bmad-output/         # BMAD artifacts
+```
+
+---
+
+## 🔗 Related Documents
+
+- [BMAD Workflow Status](../_bmad-output/planning-artifacts/bmm-workflow-status.yaml)
+- [AGENTS.md](../AGENTS.md) - Agent configuration
