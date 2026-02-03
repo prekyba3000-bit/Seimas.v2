@@ -467,6 +467,13 @@ if __name__ == "__main__":
 if os.path.exists("dashboard/dist/assets"):
     app.mount("/assets", StaticFiles(directory="dashboard/dist/assets"), name="assets")
 
+# Serve Index for Root
+@app.get("/")
+async def serve_root():
+    if os.path.exists("dashboard/dist/index.html"):
+        return FileResponse("dashboard/dist/index.html")
+    return {"error": "Dashboard build not found"}
+
 # Catch-all for SPA (must be last)
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str):
