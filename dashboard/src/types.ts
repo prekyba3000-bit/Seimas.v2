@@ -25,3 +25,13 @@ export interface ActivityItem {
   context: string;
   time: string;
 }
+
+// UI Types
+import { ReactNode } from "react";
+import { HTMLMotionProps } from "framer-motion";
+
+export interface CardProps extends HTMLMotionProps<"div"> {
+  children: ReactNode;
+  className?: string;
+  hover?: boolean;
+}

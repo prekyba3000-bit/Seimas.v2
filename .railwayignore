@@ -8,9 +8,14 @@ __pycache__
 archive
 docs
 memory-bank
-dashboard
+dashboard/
 tests
 *.html
 *.xml
-node_modules
+node_modules/
+**/node_modules/
 .env
+_bmad
+_bmad-output
+.agent
+.claude

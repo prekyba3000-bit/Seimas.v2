@@ -32,3 +32,10 @@ archive/
 *.html
 *.xml
 response.xml
+
+# Tooling & Builds
+storybook-static/
+.agent/
+.claude/
+_bmad/
+_bmad-output/

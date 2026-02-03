@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { VoteCard } from '../VotesListView';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { VoteCard } from '../views/VotesListView';
 
 const meta = {
     title: 'Components/VoteCard',

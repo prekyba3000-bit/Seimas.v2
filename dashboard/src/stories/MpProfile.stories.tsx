@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { MpProfileLayout } from '../MpProfileView';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { MpProfileLayout } from '../views/MpProfileView';
 
 const meta = {
     title: 'Views/MpProfile',

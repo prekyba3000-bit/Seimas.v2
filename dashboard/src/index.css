@@ -15,16 +15,18 @@ body {
   color: white;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
+/* Neutral utility classes */
 .glass {
-  background-color: rgba(26, 26, 30, 0.4);
-  backdrop-filter: blur(12px);
+  /* Retaining basic transparency for layout but removing specific Baltic look */
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
 }
 
-.glass-glow {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
-  border-color: rgba(59, 130, 246, 0.2);
+.glass-card {
+  @apply rounded-xl;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
