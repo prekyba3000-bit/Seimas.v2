@@ -348,13 +348,7 @@ def get_mp_votes(mp_id: str, limit: int = 20):
                 for row in rows
             ]
 
-@app.get("/")
-def root():
-    return {
-        "name": "Skaidrus Seimas API",
-        "version": "2.2",
-        "endpoints": ["/health", "/api/stats", "/api/activity", "/api/mps", "/api/mps/{id}", "/api/mps/{id}/votes", "/api/mps/compare"]
-    }
+
 
 @app.get("/health")
 def health():
