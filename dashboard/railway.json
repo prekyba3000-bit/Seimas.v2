@@ -5,7 +5,8 @@
     "buildCommand": "npm install && npm run build"
   },
   "deploy": {
-    "startCommand": "npx serve dist -s -l $PORT",
-    "restartPolicyType": "ON_FAILURE"
+    "startCommand": "npx http-server dist -p ${PORT:-3000} --cors",
+    "restartPolicyType": "ON_FAILURE",
+    "healthcheckPath": "/"
   }
 }
