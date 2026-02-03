@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import Response
+from fastapi.responses import Response, FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import contextmanager
 import psycopg2
@@ -458,6 +459,29 @@ def get_vote(vote_id: str):
                 "votes": mp_votes
             }
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+# ... (existing imports)
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# Serve React App
+# Mount assets first to avoid interference with API routes
+if os.path.exists("dashboard/dist/assets"):
+    app.mount("/assets", StaticFiles(directory="dashboard/dist/assets"), name="assets")
+
+# Catch-all for SPA (must be last)
+@app.get("/{full_path:path}")
+async def serve_react_app(full_path: str):
+    # Pass through API requests if for some reason they matched here (unlikely due to order)
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="Not Found")
+    
+    # Serve index.html for all other routes
+    if os.path.exists("dashboard/dist/index.html"):
+        return FileResponse("dashboard/dist/index.html")
+    return {"error": "Dashboard build not found. Run 'npm run build' in dashboard/"}
+
