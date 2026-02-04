@@ -12,10 +12,8 @@ export function EffectCard({ title, description, effectType }: EffectCardProps) 
       shadow: 'shadow-[0_0_15px_rgba(59,130,246,0.2)]',
       border: 'border-blue-500/20',
       bg: 'bg-blue-500/10',
-      backdrop: '',
     },
     'blur-background': {
-      shadow: '',
       backdrop: 'backdrop-blur-[40px]',
       bg: 'bg-white/10',
       border: 'border-white/20',
