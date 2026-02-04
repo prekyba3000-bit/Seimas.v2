@@ -140,5 +140,9 @@ def ingest_term_votes():
     conn.close()
     print(f"SUCCESS: Ingested {total_votes} votes/updates.")
 
+
+def sync_votes():
+    ingest_term_votes()
+
 if __name__ == "__main__":
     ingest_term_votes()

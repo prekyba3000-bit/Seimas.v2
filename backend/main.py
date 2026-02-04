@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.responses import Response, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,8 +8,20 @@ from psycopg2.extras import RealDictCursor
 from psycopg2.pool import ThreadedConnectionPool
 import os
 import time
+import sys
 from typing import List, Dict
 from collections import defaultdict
+
+# Add root directory to sys.path to allow importing ingestion scripts
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from ingest_seimas import sync_db as sync_mps
+    from ingest_votes_v2 import sync_votes
+except ImportError as e:
+    print(f"Warning: Could not import ingestion scripts: {e}")
+    sync_mps = None
+    sync_votes = None
 
 app = FastAPI(title="Skaidrus Seimas API")
 
@@ -368,6 +380,30 @@ def health():
         "orchestra": "conducting",
         "database": db_status
     }
+
+@app.post("/api/admin/sync/mps")
+def trigger_sync_mps(background_tasks: BackgroundTasks, secret: str):
+    """Trigger MP data sync from LRS."""
+    if secret != os.getenv("TASKADE_TOKEN", "dev-secret"):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    if not sync_mps:
+        raise HTTPException(status_code=500, detail="Ingestion script not loaded")
+
+    background_tasks.add_task(sync_mps)
+    return {"status": "MP sync started in background"}
+
+@app.post("/api/admin/sync/votes")
+def trigger_sync_votes(background_tasks: BackgroundTasks, secret: str):
+    """Trigger Vote data sync (recent votes)."""
+    if secret != os.getenv("TASKADE_TOKEN", "dev-secret"):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    if not sync_votes:
+        raise HTTPException(status_code=500, detail="Ingestion script not loaded")
+
+    background_tasks.add_task(sync_votes)
+    return {"status": "Vote sync started in background"}
 
 @app.get("/api/votes")
 def get_votes(limit: int = 50, offset: int = 0):
