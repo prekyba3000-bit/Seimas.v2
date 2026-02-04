@@ -114,7 +114,7 @@ def get_stats(request: Request):
         
         with conn.cursor() as cur:
             # Total MPs
-            cur.execute("SELECT count(*) as count FROM politicians")
+            cur.execute("SELECT count(*) as count FROM mps")
             mp_count = cur.fetchone()["count"]
             
             # Total Votes
@@ -168,11 +168,10 @@ def get_mps():
             raise HTTPException(status_code=500, detail="Database connection failed")
         
         with conn.cursor() as cur:
-            cur.execute("""
-                SELECT id, display_name, current_party, photo_url, is_active
-                FROM politicians
+                SELECT id, name as display_name, party as current_party, photo_url, is_active
+                FROM mps
                 WHERE is_active = TRUE
-                ORDER BY display_name
+                ORDER BY name
             """)
             rows = cur.fetchall()
             return [

@@ -30,7 +30,8 @@ Thumbs.db
 .env
 archive/
 *.html
-*.xml
+# *.xml
+!mps.xml
 response.xml
 
 # Tooling & Builds
