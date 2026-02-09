@@ -20,11 +20,11 @@
   --glass-hover: rgba(255, 255, 255, 0.1);
   --party-tevynes-sajunga: #3b82f6;
   --party-socialdemokratai: #ef4444;
-  --party-liberalai: #eab308;
+  --party-liberalai: var(--status-warning);
   --party-vardan-lietuvos: #22c55e;
   --party-valstiečiai: #059669;
   --party-laisves-partija: #ec4899;
-  --party-darbo-partija: #f97316;
+  --party-darbo-partija: var(--status-warning);
   --party-default: #6b7280;
 
   /* Typography */
