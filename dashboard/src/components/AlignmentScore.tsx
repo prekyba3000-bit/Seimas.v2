@@ -12,12 +12,12 @@ export function AlignmentScore({ score, isLoading = false, size = 200 }: Alignme
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
 
-  // Color based on alignment score
+  // Color based on alignment score using CSS variables
   const getScoreColor = () => {
-    if (score >= 80) return '#22c55e'; // Green
-    if (score >= 60) return '#3b82f6'; // Blue
-    if (score >= 40) return '#f59e0b'; // Amber
-    return '#ef4444'; // Red
+    if (score >= 80) return 'var(--status-success)';      // Green
+    if (score >= 60) return 'var(--party-tevynes-sajunga)'; // Blue
+    if (score >= 40) return 'var(--party-darbo-partija)';  // Amber
+    return 'var(--status-danger)';                         // Red
   };
 
   const scoreColor = getScoreColor();
@@ -88,18 +88,27 @@ export function AlignmentScore({ score, isLoading = false, size = 200 }: Alignme
       {/* Center Label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {isLoading ? (
-          <div className="text-white text-sm">Loading...</div>
+          <div className="text-sm" style={{ color: 'var(--text-primary)' }}>
+            Loading...
+          </div>
         ) : (
           <>
             <div
-              className="font-bold text-white"
-              style={{ fontSize: size * 0.24, lineHeight: 1 }}
+              className="font-bold"
+              style={{
+                fontSize: size * 0.24,
+                lineHeight: 1,
+                color: 'var(--text-primary)',
+              }}
             >
               {score}%
             </div>
             <div
-              className="text-gray-400 font-semibold tracking-[0.2em] mt-2"
-              style={{ fontSize: size * 0.06 }}
+              className="font-semibold tracking-[0.2em] mt-2"
+              style={{
+                fontSize: size * 0.06,
+                color: 'var(--text-secondary)',
+              }}
             >
               AGREEMENT
             </div>

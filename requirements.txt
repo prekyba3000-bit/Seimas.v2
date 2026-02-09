@@ -1,6 +1,8 @@
+aiohttp
+psycopg2-binary
+python-dotenv
 fastapi
 requests
-psycopg2-binary
 unidecode
 defusedxml
 beautifulsoup4

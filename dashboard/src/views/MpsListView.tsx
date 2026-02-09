@@ -31,9 +31,10 @@ const MpsListView = () => {
 
     // Filter MPs
     const filtered = mps.filter(mp => {
-        const matchesSearch = mp.name.toLowerCase().includes(search.toLowerCase());
-        const matchesParty = !partyFilter || mp.party === partyFilter;
-        return matchesSearch && matchesParty;
+        const matchesSearch = (mp.name || mp.display_name || '').toLowerCase().includes(search.toLowerCase());
+        const matchesParty = !partyFilter || (mp.party || mp.current_party) === partyFilter;
+        const isActive = mp.is_active !== false; // Show only active MPs
+        return matchesSearch && matchesParty && isActive;
     });
 
     const handleMpClick = (mpId: string) => {
@@ -50,57 +51,84 @@ const MpsListView = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row items-end md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold flex items-center gap-3 mb-2">
-                        <Users className="w-8 h-8 text-blue-500" />
+                    <h2
+                        className="text-3xl font-bold flex items-center gap-3 mb-2"
+                        style={{ color: 'var(--text-primary)' }}
+                    >
+                        <Users className="w-8 h-8" style={{ color: 'var(--primary-500)' }} />
                         Seimas Members
                     </h2>
-                    <p className="text-gray-400">Current term representatives</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>Current term representatives</p>
                 </div>
-                <div className="px-4 py-2 bg-white/5 rounded-lg text-sm font-medium border border-white/5">
-                    <span className="text-white">{filtered.length}</span>
-                    <span className="text-gray-500 ml-1">members</span>
+                <div
+                    className="px-4 py-2 rounded-lg text-sm font-medium border"
+                    style={{
+                        backgroundColor: 'var(--background-elevated)',
+                        borderColor: 'var(--glass-border)',
+                    }}
+                >
+                    <span style={{ color: 'var(--text-primary)' }}>{filtered.length}</span>
+                    <span className="ml-1" style={{ color: 'var(--text-secondary)' }}>members</span>
                 </div>
             </div>
 
-            {/* Filters */}
-            <Card className="p-4 flex flex-col md:flex-row gap-4 bg-white/5">
-                {/* Search */}
-                <div className="relative flex-1 group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-blue-500 transition-colors" />
+            {/* Smart Search - Unified Input to Reduce Choice Paralysis */}
+            <Card className="p-4" style={{ backgroundColor: 'var(--background-elevated)' }}>
+                <div className="relative group">
+                    <Search
+                        className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors"
+                        style={{
+                            color: 'var(--text-secondary)',
+                        }}
+                    />
                     <input
                         type="text"
-                        placeholder="Search by name..."
+                        placeholder="Search by name or party..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-gray-600"
+                        className="w-full pl-11 pr-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-1 transition-all"
+                        style={{
+                            backgroundColor: 'var(--background-surface)',
+                            borderColor: 'var(--glass-border)',
+                            color: 'var(--text-primary)',
+                        }}
+                        onFocus={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--primary-500)';
+                        }}
+                        onBlur={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--glass-border)';
+                        }}
                     />
                 </div>
-
-                {/* Party Filter */}
-                <div className="relative min-w-[250px] group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none group-focus-within:text-blue-500 transition-colors">
-                        <Filter className="w-4 h-4" />
+                {(search || partyFilter) && (
+                    <div className="mt-3 flex items-center justify-between">
+                        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                            Filters active
+                        </span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => { setSearch(''); setPartyFilter(null); }}
+                        >
+                            Clear
+                        </Button>
                     </div>
-                    <select
-                        value={partyFilter || ''}
-                        onChange={e => setPartyFilter(e.target.value || null)}
-                        className="w-full pl-11 pr-8 py-3 bg-black/20 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all cursor-pointer appearance-none text-gray-300"
-                    >
-                        <option value="">All Parties</option>
-                        {parties.map(party => (
-                            <option key={party} value={party}>{party}</option>
-                        ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-                        <ChevronRight className="w-4 h-4 rotate-90" />
-                    </div>
-                </div>
+                )}
             </Card>
 
             {/* Loading State */}
             {loading ? (
-                <div className="p-20 text-center text-gray-400 flex flex-col items-center">
-                    <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mb-4" />
+                <div
+                    className="p-20 text-center flex flex-col items-center"
+                    style={{ color: 'var(--text-secondary)' }}
+                >
+                    <div
+                        className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mb-4"
+                        style={{
+                            borderColor: 'var(--primary-500)',
+                            borderTopColor: 'transparent',
+                        }}
+                    />
                     Loading MP roster...
                 </div>
             ) : (
@@ -118,10 +146,15 @@ const MpsListView = () => {
 
                     {/* Empty State */}
                     {filtered.length === 0 && (
-                        <div className="text-center py-20 text-gray-500 flex flex-col items-center gap-4">
+                        <div
+                            className="text-center py-20 flex flex-col items-center gap-4"
+                            style={{ color: 'var(--text-secondary)' }}
+                        >
                             <Users className="w-12 h-12 opacity-20" />
                             <p>No MPs found matching criteria</p>
-                            <Button variant="ghost" onClick={() => { setSearch(''); setPartyFilter(null); }}>Clear Filters</Button>
+                            <Button variant="ghost" onClick={() => { setSearch(''); setPartyFilter(null); }}>
+                                Clear Filters
+                            </Button>
                         </div>
                     )}
                 </>

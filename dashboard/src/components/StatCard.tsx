@@ -1,4 +1,3 @@
-import { StatCardProps } from '../types';
 import { Card } from './Card';
 
 interface StatCardProps {
@@ -11,23 +10,27 @@ interface StatCardProps {
 
 export const StatCard = ({ title, value, icon: Icon, trend, delay = 0 }: StatCardProps) => (
     <Card
-        glow
-        className="flex flex-col gap-2 relative overflow-hidden group"
+        className="flex flex-col gap-3 relative overflow-hidden group"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay }}
     >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:bg-blue-500/10 transition-colors" />
+        {/* Gold glow effect on hover */}
+        <div className="absolute top-0 right-0 w-32 h-32 rounded-sm -translate-y-1/2 translate-x-1/2 blur-2xl group-hover:transition-colors transition-colors" style={{ backgroundColor: 'var(--color-neon-gold, rgba(255, 215, 0, 0.05))', '--hover-glow': 'var(--color-neon-gold, rgba(255, 215, 0, 0.15))' } as any} />
 
         <div className="flex justify-between items-start relative z-10">
-            <div className="p-3 bg-blue-500/10 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                <Icon className="w-6 h-6 text-blue-500" />
+            <div className="p-3 rounded-sm group-hover:scale-105 transition-transform duration-300 ease-snap border" style={{ backgroundColor: 'var(--color-neon-gold, rgba(255, 215, 0, 0.1))', borderColor: 'var(--color-neon-gold, rgba(255, 215, 0, 0.2))' }}>
+                <Icon className="w-5 h-5 text-neon-gold" />
             </div>
-            {trend && <span className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full">+{trend}%</span>}
+            {trend && (
+                <span className="text-xs px-2 py-1 rounded-sm font-terminal border" style={{ color: 'var(--status-success)', backgroundColor: 'var(--status-success-muted)', borderColor: 'var(--status-success, rgba(34, 197, 94, 0.2))' }}>
+                    +{trend}%
+                </span>
+            )}
         </div>
         <div className="relative z-10">
-            <span className="text-sm text-gray-400 block mb-1">{title}</span>
-            <span className="text-3xl font-bold tracking-tight text-white">{value}</span>
+            <span className="text-ghost text-xs uppercase tracking-widest block mb-1 font-terminal">{title}</span>
+            <span className="text-3xl font-bold tracking-tight text-neon-gold">{value}</span>
         </div>
     </Card>
 );

@@ -39,12 +39,15 @@ export function ComparisonView({
         {/* VS Badge (Center) */}
         <div className="relative flex items-center justify-center">
           <div
-            className="relative w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center z-10"
+            className="relative w-16 h-16 rounded-full flex items-center justify-center z-10"
             style={{
-              boxShadow: '0 10px 20px rgba(59, 130, 246, 0.5), 0 0 0 4px #0a0a0c',
+              backgroundColor: 'var(--primary-500)',
+              boxShadow: `0 10px 20px rgba(59, 130, 246, 0.5), 0 0 0 4px var(--background-base)`,
             }}
           >
-            <span className="text-white font-bold text-xl">VS</span>
+            <span className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>
+              VS
+            </span>
           </div>
         </div>
 
@@ -60,10 +63,12 @@ export function ComparisonView({
       {(mp1 && mp2) && (
         <div className="mt-12 flex justify-center">
           <div className="text-center">
-            <h3 className="text-white text-xl font-semibold mb-6">Voting Alignment</h3>
+            <h3 className="text-xl font-semibold mb-6" style={{ color: 'var(--text-primary)' }}>
+              Voting Alignment
+            </h3>
             <AlignmentScore score={alignmentScore} isLoading={isLoading} size={200} />
             {!isLoading && (
-              <p className="mt-6 text-gray-400 text-sm max-w-md">
+              <p className="mt-6 text-sm max-w-md" style={{ color: 'var(--text-secondary)' }}>
                 These members voted the same way on {alignmentScore}% of bills
               </p>
             )}

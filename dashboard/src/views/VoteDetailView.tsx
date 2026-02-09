@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ExternalLink, ThumbsUp, ThumbsDown, Circle, Minus, UserX, Search, PieChart } from 'lucide-react';
+import { ArrowLeft, ExternalLink, ThumbsUp, ThumbsDown, Circle, Minus, UserX, Search, PieChart, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { API_URL } from '../config';
 import { Card } from '../components/Card';
@@ -23,19 +23,19 @@ interface VoteDetail {
 
 const getChoiceIcon = (choice: string) => {
     switch (choice.toLowerCase()) {
-        case 'už': return <ThumbsUp className="w-4 h-4 text-green-500" />;
-        case 'prieš': return <ThumbsDown className="w-4 h-4 text-red-500" />;
-        case 'susilaikė': return <Minus className="w-4 h-4 text-yellow-500" />;
+        case 'už': return <ThumbsUp className="w-4 h-4" style={{ color: 'var(--status-success)' }} />;
+        case 'prieš': return <ThumbsDown className="w-4 h-4" style={{ color: 'var(--status-danger)' }} />;
+        case 'susilaikė': return <Minus className="w-4 h-4" style={{ color: 'var(--status-warning)' }} />;
         default: return <UserX className="w-4 h-4 text-gray-500" />;
     }
 };
 
-const getChoiceColor = (choice: string) => {
+const getChoiceColor = (choice: string): React.CSSProperties => {
     switch (choice.toLowerCase()) {
-        case 'už': return 'bg-green-500';
-        case 'prieš': return 'bg-red-500';
-        case 'susilaikė': return 'bg-yellow-500';
-        default: return 'bg-gray-700';
+        case 'už': return { backgroundColor: 'var(--status-success)' };
+        case 'prieš': return { backgroundColor: 'var(--status-danger)' };
+        case 'susilaikė': return { backgroundColor: 'var(--status-warning)' };
+        default: return { backgroundColor: 'var(--color-text-ghost, #666666)' };
     }
 };
 
@@ -104,7 +104,7 @@ const VoteDetailView = ({ voteId }: { voteId: string }) => {
                         <Calendar className="w-4 h-4" />
                         {vote.date}
                     </span>
-                    <span className={`px-3 py-1 rounded-full font-medium ${vote.result_type.toLowerCase().includes('priimta') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                    <span className="px-3 py-1 rounded-full font-medium" style={{ backgroundColor: vote.result_type.toLowerCase().includes('priimta') ? 'var(--status-success-muted, rgba(34, 197, 94, 0.1))' : 'rgba(239, 68, 68, 0.1)', color: vote.result_type.toLowerCase().includes('priimta') ? 'var(--status-success)' : 'var(--status-danger)' }}>
                         {vote.result_type}
                     </span>
                     <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5">
@@ -131,8 +131,8 @@ const VoteDetailView = ({ voteId }: { voteId: string }) => {
                         return (
                             <div
                                 key={choice}
-                                className={`${getChoiceColor(choice)} h-full transition-all duration-1000 relative group flex items-center justify-center`}
-                                style={{ width: `${width}%` }}
+                                className="h-full transition-all duration-1000 relative group flex items-center justify-center"
+                                style={{ width: `${width}%`, ...getChoiceColor(choice) }}
                                 title={`${choice}: ${count}`}
                             >
                                 {width > 10 && <span className="text-xs font-bold text-black/50 drop-shadow-sm">{Math.round(width)}%</span>}
@@ -145,7 +145,7 @@ const VoteDetailView = ({ voteId }: { voteId: string }) => {
                 <div className="flex flex-wrap gap-6 justify-center">
                     {Object.entries(vote.stats).map(([choice, count]) => (
                         <div key={choice} className="flex items-center gap-3 text-sm p-3 rounded-lg bg-white/5 border border-white/5 min-w-[120px]">
-                            <div className={`w-3 h-3 rounded-full ${getChoiceColor(choice)} shadow-[0_0_10px_currentColor]`} />
+                            <div className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor]" style={getChoiceColor(choice)} />
                             <span className="text-gray-400 capitalize">{choice}</span>
                             <span className="font-bold text-white ml-auto">{count}</span>
                         </div>
@@ -172,7 +172,7 @@ const VoteDetailView = ({ voteId }: { voteId: string }) => {
                     </div>
                 </div>
 
-                <div className="divide-y divide-white/5 max-h-[600px] overflow-y-auto custom-scrollbar">
+                <div className="divide-y divide-white/5 max-h-[600px] overflow-y-auto overflow-x-auto custom-scrollbar">
                     {filteredVotes.map((v, i) => (
                         <div key={i} className="py-3 px-6 flex items-center justify-between hover:bg-white/5 transition-colors group">
                             <div className="flex items-center gap-3">

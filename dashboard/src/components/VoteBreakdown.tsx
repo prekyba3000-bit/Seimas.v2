@@ -1,10 +1,10 @@
 import React from 'react';
 
-// Voting Status colors from token collection
+// Voting Status colors mapped to CSS variables
 const VOTING_STATUS_COLORS = {
-  'Už': '#22c55e', // Green 500 (For)
-  'Prieš': '#ef4444', // Red 500 (Against)
-  'Susilaikė': '#eab308', // Yellow 500 (Abstain)
+  'Už': 'var(--status-success)',      // Green 500 (For)
+  'Prieš': 'var(--status-danger)',    // Red 500 (Against)
+  'Susilaikė': 'var(--status-warning)', // Yellow 500 (Abstain)
 };
 
 interface VoteStats {
@@ -31,7 +31,10 @@ function VoteSegment({ percentage, color, label }: VoteSegmentProps) {
       }}
     >
       {showText && (
-        <span className="text-white font-semibold text-sm px-2">
+        <span
+          className="font-semibold text-sm px-2"
+          style={{ color: 'var(--text-primary)' }}
+        >
           {percentage.toFixed(0)}%
         </span>
       )}
@@ -48,18 +51,25 @@ interface LegendItemProps {
 
 function LegendItem({ label, count, percentage, color }: LegendItemProps) {
   return (
-    <div className="flex-1 min-w-[200px] flex items-center gap-3 px-4 py-3 bg-gray-900 rounded-lg">
+    <div
+      className="flex-1 min-w-[200px] flex items-center gap-3 px-4 py-3 rounded-lg"
+      style={{ backgroundColor: 'var(--background-elevated)' }}
+    >
       <div
         className="w-4 h-4 rounded-full flex-shrink-0"
         style={{ backgroundColor: color }}
       />
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
-          <span className="text-white font-medium">{label}</span>
-          <span className="text-gray-400 text-sm">{count} votes</span>
+          <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+            {label}
+          </span>
+          <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            {count} votes
+          </span>
         </div>
       </div>
-      <div className="text-white font-bold text-lg flex-shrink-0">
+      <div className="font-bold text-lg flex-shrink-0" style={{ color: 'var(--text-primary)' }}>
         {percentage.toFixed(1)}%
       </div>
     </div>
@@ -80,14 +90,25 @@ export function VoteBreakdown({ title, stats, totalVotes }: VoteBreakdownProps) 
   const abstainPercentage = (stats.abstain / total) * 100;
 
   return (
-    <div className="space-y-4 p-6 bg-gray-800 rounded-xl">
+    <div
+      className="space-y-4 p-6 rounded-xl"
+      style={{ backgroundColor: 'var(--background-surface)' }}
+    >
       {/* Title */}
       {title && (
-        <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
+        <h3
+          className="text-lg font-semibold mb-4"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {title}
+        </h3>
       )}
       
       {/* Multi-Segment Progress Bar */}
-      <div className="h-12 bg-gray-900 rounded-xl overflow-hidden flex">
+      <div
+        className="h-12 rounded-xl overflow-hidden flex"
+        style={{ backgroundColor: 'var(--background-elevated)' }}
+      >
         <VoteSegment
           percentage={forPercentage}
           color={VOTING_STATUS_COLORS['Už']}
