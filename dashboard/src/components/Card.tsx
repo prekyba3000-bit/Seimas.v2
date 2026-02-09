@@ -8,7 +8,7 @@ export const Card = ({ children, className, hover = false, ...props }: CardProps
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-                "holo-card glow-gold p-6 rounded-sm transition-all duration-300",
+                "p-6 rounded-sm transition-all duration-300 bg-surface border border-border",
                 hover && "hover:bg-white/5 cursor-pointer",
                 className
             )}

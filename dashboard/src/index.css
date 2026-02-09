@@ -60,47 +60,9 @@
   --space-12: 48px;
 }
 
-:root {
-  /* The Iron Wolf Palette */
-  --color-bg-void: #050505;       /* The Deepest Black */
-  --color-bg-armor: #111111;      /* The Panel Background */
-  
-  --color-neon-gold: #FFD700;     /* Laser Gold */
-  --color-neon-amber: #FFAA00;    /* Deep Amber */
-  --color-neon-crimson: #DC143C;  /* Laser Red */
-  
-  --color-text-ghost: #666666;    /* Passive Data */
-  --color-text-bright: #EEEEEE;   /* Active Data */
-
-  /* Status Colors */
-  --status-success: #22c55e;
-  --status-success-muted: rgba(34, 197, 94, 0.1);
-  --status-danger: #ef4444;
-  --status-danger-muted: rgba(239, 68, 68, 0.2);
-  --status-warning: #eab308;
-  
-  /* Glass Effect - Gold Tint */
-  --glass-background: rgba(255, 215, 0, 0.03);
-  --glass-border: rgba(255, 215, 0, 0.1);
-  --glass-hover: rgba(255, 215, 0, 0.08);
-  
-  /* Party Colors */
-  --party-tevynes-sajunga: #3b82f6;
-  --party-socialdemokratai: #ef4444;
-  --party-liberalai: #eab308;
-  --party-vardan-lietuvos: #22c55e;
-  --party-valstiečiai: #059669;
-  --party-laisves-partija: #ec4899;
-  --party-darbo-partija: #f97316;
-  --party-default: #6b7280;
-
-  /* The Fonts */
-  --font-decree: 'Cinzel', serif;
-  --font-terminal: 'JetBrains Mono', monospace;
-  
-  /* The Physics */
-  --ease-snap: cubic-bezier(0.22, 1, 0.36, 1);
-}
+/* Legacy Iron Wolf palette and gold/amber accent styles removed.
+   Design tokens and visual styles must come exclusively from Figma.
+   Any needed tokens should be defined in the Figma-synced tokens file. */
 
 
 @import "tailwindcss";
@@ -296,32 +258,7 @@
    THE IRON WOLF UTILITY CLASSES
    ============================================ */
 
-/* The "Holo-Card" Utility */
-.holo-card {
-  background: var(--color-bg-armor);
-  border: 1px solid rgba(255, 215, 0, 0.1);
-  position: relative;
-  overflow: hidden;
-}
-
-/* The "Laser Scan" Hover Effect */
-.holo-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
-  transform: skewX(-25deg);
-  transition: left 0.5s;
-  pointer-events: none;
-}
-
-.holo-card:hover::after {
-  left: 150%;
-  transition: left 0.7s ease-in-out;
-}
+/* Removed legacy 'holo-card' utility (non-Figma styles) */
 
 /* The Decree Typography - Heritage Headers */
 .text-decree {
@@ -330,29 +267,14 @@
   text-transform: uppercase;
 }
 
-/* Neon Gold Text */
-.text-neon-gold {
-  color: var(--color-neon-gold);
-}
-
-.text-neon-amber {
-  color: var(--color-neon-amber);
-}
-
-.text-neon-crimson {
-  color: var(--color-neon-crimson);
-}
+/* Removed legacy neon color utilities — use Figma tokens instead */
 
 /* Ghost Text */
 .text-ghost {
   color: var(--color-text-ghost);
 }
 
-/* Gold Border Glow on Hover */
-.glow-gold:hover {
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-  border-color: rgba(255, 215, 0, 0.4);
-}
+/* Removed legacy gold glow utility */
 
 /* Terminal Font */
 .font-terminal {
