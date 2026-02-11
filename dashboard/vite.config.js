@@ -17,6 +17,9 @@ export default defineConfig({
       '/api': 'http://localhost:8000'
     }
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+  },
   test: {
     globals: true,
     environment: 'jsdom',
