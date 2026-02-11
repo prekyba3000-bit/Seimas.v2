@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Activity, Shield, Crosshair } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { API_URL } from '../config';
 import { StatCard } from '../components/StatCard';
 import { Card } from '../components/Card';
@@ -31,7 +31,7 @@ export const DashboardView = () => {
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col gap-8"
+            className="min-h-screen bg-background text-primary flex flex-col gap-8"
         >
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -44,7 +44,7 @@ export const DashboardView = () => {
             {/* Main Content */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <Card className="lg:col-span-2">
-                    <h2 className="text-decree text-lg mb-6 flex items-center gap-3 text-neon-gold">
+                    <h2 className="text-decree text-lg mb-6 flex items-center gap-3 text-primary">
                         <Activity className="w-5 h-5" />
                         ACTIVITY BRIEFING
                     </h2>
@@ -55,18 +55,18 @@ export const DashboardView = () => {
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: i * 0.05 }}
-                                className="flex items-center justify-between p-4 border-b border-[#FFD700]/10 last:border-0 hover:bg-[#FFD700]/5 transition-colors rounded-sm group cursor-pointer"
+                                className="flex items-center justify-between p-4 border-b border-border last:border-0 hover:bg-surface/5 transition-colors rounded-sm group cursor-pointer"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-[#111111] rounded-sm flex items-center justify-center text-xs font-terminal ring-1 ring-[#FFD700]/30 group-hover:ring-[#FFD700] transition-all text-[#FFD700]">
+                                    <div className="w-10 h-10 bg-[#111111] rounded-sm flex items-center justify-center text-xs font-terminal ring-1 ring-border group-hover:ring-border transition-all text-primary">
                                         SN
                                     </div>
-                                    <div className="flex flex-col">
-                                        <span className="font-medium text-[#EEEEEE] group-hover:text-[#FFD700] transition-colors">{item.name}</span>
+                                        <div className="flex flex-col">
+                                        <span className="font-medium text-[#EEEEEE] group-hover:text-secondary transition-colors">{item.name}</span>
                                         <span className="text-xs text-ghost font-terminal">{item.action}: {item.context}</span>
                                     </div>
                                 </div>
-                                <span className="text-xs text-[#FFD700] bg-[#FFD700]/10 px-2 py-1 rounded-sm border border-[#FFD700]/20 font-terminal">{item.time}</span>
+                                <span className="text-xs text-primary bg-surface/10 px-2 py-1 rounded-sm border border-border font-terminal">{item.time}</span>
                             </motion.div>
                         )) : (
                             <p className="text-ghost text-sm py-4 text-center font-terminal uppercase tracking-widest">Loading intel...</p>
@@ -75,19 +75,19 @@ export const DashboardView = () => {
                 </Card>
 
                 <Card className="flex flex-col gap-6">
-                    <h2 className="text-decree text-lg text-neon-gold flex items-center gap-2">
+                    <h2 className="text-decree text-lg text-primary flex items-center gap-2">
                         <Shield className="w-5 h-5" />
                         SYSTEM STATUS
                     </h2>
                     <div className="flex flex-col gap-6">
                         <div className="flex flex-col gap-2">
-                            <div className="flex justify-between text-xs font-terminal">
+                                <div className="flex justify-between text-xs font-terminal">
                                 <span className="text-ghost uppercase tracking-widest">Data Sync</span>
-                                <span className="text-[#FFD700]">85%</span>
+                                <span className="text-secondary">85%</span>
                             </div>
                             <div className="h-2 w-full bg-[#111111] rounded-sm overflow-hidden">
-                                <motion.div
-                                    className="h-full bg-gradient-to-r from-[#FFAA00] to-[#FFD700] relative"
+                                    <motion.div
+                                    className="h-full bg-gradient-to-r from-secondary to-primary relative"
                                     initial={{ width: 0 }}
                                     animate={{ width: '85%' }}
                                     transition={{ duration: 1.5, ease: "easeOut" }}
@@ -96,9 +96,9 @@ export const DashboardView = () => {
                                 </motion.div>
                             </div>
                         </div>
-                        <div className="p-4 bg-[#111111] rounded-sm border border-[#FFD700]/10 font-terminal text-xs text-ghost leading-relaxed">
+                                <div className="p-4 bg-[#111111] rounded-sm border border-border font-terminal text-xs text-ghost leading-relaxed">
                             <span className="text-[#22c55e]">➜</span> Engine: <span className="text-[#22c55e]">ONLINE</span><br />
-                            <span className="text-[#FFD700]">➜</span> Ingestion: <span className="text-[#FFD700]">ACTIVE</span><br />
+                            <span className="text-secondary">➜</span> Ingestion: <span className="text-secondary">ACTIVE</span><br />
                             <span className="text-[#3b82f6]">➜</span> Database: <span className="text-[#3b82f6]">CONNECTED</span>
                         </div>
                     </div>

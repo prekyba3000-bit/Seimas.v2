@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, HTMLMotionProps } from 'framer-motion';
+import { motion, HTMLMotionProps } from 'motion/react';
 import { cn } from '../utils';
 import { Loader2 } from 'lucide-react';
 
@@ -23,9 +23,10 @@ export const Button = ({
     // Inline styles for dynamic var() support using Figma tokens
     const variantStyles = {
         primary: {
-            backgroundColor: 'rgba(255, 215, 0, 0.15)',
-            color: 'var(--color-neon-gold)',
-            borderColor: 'var(--color-neon-gold)',
+            // Use neutral surface tint and primary text for accessibility
+            backgroundColor: 'rgba(226,232,240,0.06)',
+            color: 'var(--text-primary)',
+            borderColor: 'var(--border, #E2E8F0)',
         },
         secondary: {
             backgroundColor: 'var(--background-elevated)',

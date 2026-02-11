@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { cn } from '../utils';
 import { LayoutDashboard, Users, FileText, GitCompare, Crosshair } from 'lucide-react';
 
@@ -30,11 +30,11 @@ export const Header = ({ view }: HeaderProps) => {
                 className="flex flex-col"
             >
                 <h1 className="text-decree text-3xl font-bold flex items-center gap-3">
-                    <Crosshair className="w-8 h-8 text-neon-gold" />
-                    <a href="#/" className="text-neon-gold hover:text-neon-amber transition-colors ease-snap">
+                    <Crosshair className="w-8 h-8 text-primary" />
+                    <a href="#/" className="text-primary hover:text-secondary transition-colors ease-snap">
                         SKAIDRUS SEIMAS
                     </a>
-                    <span className="text-neon-gold text-xs px-2 py-0.5 rounded-sm border font-terminal" style={{ backgroundColor: 'var(--color-neon-gold, rgba(255, 215, 0, 0.1))', borderColor: 'var(--color-neon-gold, rgba(255, 215, 0, 0.3))' }}>v.2</span>
+                    <span className="text-primary text-xs px-2 py-0.5 rounded-sm border font-terminal" style={{ backgroundColor: 'rgba(226,232,240,0.05)', borderColor: 'var(--border, #E2E8F0)' }}>v.2</span>
                 </h1>
                 <p className="text-ghost text-xs mt-1 tracking-widest font-terminal uppercase">
                     PARLIAMENTARY INTELLIGENCE SYSTEM
@@ -58,8 +58,8 @@ export const Header = ({ view }: HeaderProps) => {
                             className={cn(
                                 "flex items-center gap-2 px-4 py-2 rounded-sm text-xs font-terminal uppercase tracking-wider transition-all duration-300 ease-snap border",
                                 isActive
-                                    ? "bg-[#FFD700]/10 text-neon-gold border-[#FFD700]/30 shadow-[0_0_15px_rgba(255,215,0,0.15)]"
-                                    : "text-ghost hover:text-neon-gold hover:bg-[#FFD700]/5 border-transparent hover:border-[#FFD700]/20"
+                                    ? "bg-surface/5 text-primary border-border shadow-none"
+                                    : "text-ghost hover:text-primary hover:bg-surface/5 border-transparent hover:border-border"
                             )}
                         >
                             <Icon className="w-4 h-4" />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, GitCompare, TrendingUp, AlertTriangle, ArrowRight, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { API_URL } from '../config';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -93,8 +93,8 @@ const MpSelector = ({ mps, selected, onSelect, placeholder }: any) => {
 // Alignment Score Display
 const AlignmentScore = ({ score, label }: any) => {
     const percentage = Math.round(score * 100);
-    const color = percentage >= 80 ? 'text-green-400' : percentage >= 50 ? 'text-yellow-400' : 'text-red-400';
-    const ringColor = percentage >= 80 ? 'border-green-500' : percentage >= 50 ? 'border-yellow-500' : 'border-red-500';
+    const color = percentage >= 80 ? 'text-green-400' : percentage >= 50 ? 'text-secondary' : 'text-red-400';
+    const ringColor = percentage >= 80 ? 'border-green-500' : percentage >= 50 ? 'border-border' : 'border-red-500';
 
     return (
         <div className="flex flex-col items-center gap-4 py-8">
@@ -220,7 +220,7 @@ const ComparisonView = ({ initialSelected = [null, null] }: ComparisonViewProps)
                 >
                     {/* Alignment Score */}
                     <Card className="text-center overflow-hidden relative">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500" />
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-secondary to-green-500" />
                         <AlignmentScore
                             score={comparison.alignment_matrix[0][1]}
                             label="Agreement Score"
@@ -250,7 +250,7 @@ const ComparisonView = ({ initialSelected = [null, null] }: ComparisonViewProps)
                                                     <span className="text-xs text-gray-500 uppercase">{mp.name.split(' ').slice(-1)[0]}</span>
                                                     <span className={`text-sm font-bold ${vote.votes[mp.id] === 'Už' ? 'text-green-400' :
                                                         vote.votes[mp.id] === 'Prieš' ? 'text-red-400' :
-                                                            'text-yellow-400'
+                                                            'text-secondary'
                                                         }`}>
                                                         {vote.votes[mp.id]}
                                                     </span>

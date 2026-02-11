@@ -28,7 +28,7 @@ export interface ActivityItem {
 
 // UI Types
 import { ReactNode } from "react";
-import { HTMLMotionProps } from "framer-motion";
+import { HTMLMotionProps } from "motion/react";
 
 export interface CardProps extends HTMLMotionProps<"div"> {
   children: ReactNode;

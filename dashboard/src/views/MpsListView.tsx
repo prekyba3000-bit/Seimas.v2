@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Search, Building2, ChevronRight, Filter } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { API_URL } from '../config';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';

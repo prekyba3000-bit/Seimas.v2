@@ -1,57 +1,66 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { HashRouter, Routes, Route, Navigate, useParams, useNavigate, Outlet } from 'react-router';
+import { MainLayout } from './components/MainLayout';
+import { LandingPage } from './components/LandingPage';
+
+// Existing views (connected to real API)
 import MpProfileView from './views/MpProfileView';
 import VotesListView from './views/VotesListView';
 import VoteDetailView from './views/VoteDetailView';
 import ComparisonView from './views/ComparisonView';
 import MpsListView from './views/MpsListView';
 import { DashboardView } from './views/DashboardView';
-import { Header } from './components/Header';
 
-// Route helper
-const parseRoute = (hash: string) => {
-    if (hash.startsWith('#/mps/')) {
-        const id = hash.replace('#/mps/', '');
-        return { view: 'mp-profile', id };
-    }
-    if (hash === '#/mps') return { view: 'mps-list' };
+// Figma views (design prototypes with mock data)
+import { MpDirectory } from './components/MpDirectory';
+import { SessionOverview } from './components/SessionOverview';
 
-    if (hash.startsWith('#/votes/')) {
-        const id = hash.replace('#/votes/', '');
-        return { view: 'vote-detail', id };
-    }
-    if (hash === '#/votes') return { view: 'votes-list' };
-
-    if (hash === '#/compare') return { view: 'compare' };
-    return { view: 'dashboard' };
+// Wrapper for Profile to handle route params
+const MpProfileRoute = () => {
+    const { id } = useParams();
+    return <MpProfileView mpId={id!} />;
 };
 
-// Main App with Routing
-const App = () => {
-    const [route, setRoute] = useState(window.location.hash || '#/');
+// Wrapper for Vote Detail to handle route params
+const VoteDetailRoute = () => {
+    const { id } = useParams();
+    return <VoteDetailView voteId={id!} />;
+};
 
-    useEffect(() => {
-        const handleHashChange = () => setRoute(window.location.hash || '#/');
-        window.addEventListener('hashchange', handleHashChange);
-        return () => window.removeEventListener('hashchange', handleHashChange);
+function App() {
+    // Force dark mode
+    React.useEffect(() => {
+        document.documentElement.classList.add('dark');
     }, []);
 
-    const { view, id } = parseRoute(route);
-
     return (
-        <div className="min-h-screen p-6 md:p-8 lg:p-12 max-w-7xl mx-auto flex flex-col bg-[#0a0a0c] text-white selection:bg-blue-500/30">
-            <Header view={view} />
+        <HashRouter>
+            <Routes>
+                <Route path="/" element={<LandingPage />} />
 
-            <main className="flex-1 w-full">
-                {view === 'compare' && <ComparisonView />}
-                {view === 'mps-list' && <MpsListView />}
-                {view === 'mp-profile' && id && <MpProfileView mpId={id} />}
-                {view === 'votes-list' && <VotesListView />}
-                {view === 'vote-detail' && id && <VoteDetailView voteId={id} />}
-                {view === 'dashboard' && <DashboardView />}
-            </main>
-        </div>
+                {/* Dashboard Layout Routes */}
+                <Route path="/dashboard" element={<MainLayout />}>
+                    <Route index element={<DashboardView />} />
+
+                    <Route path="mps" element={<Outlet />}>
+                        <Route index element={<MpsListView />} />
+                        <Route path=":id" element={<MpProfileRoute />} />
+                    </Route>
+
+                    <Route path="votes" element={<Outlet />}>
+                        <Route index element={<VotesListView />} />
+                        <Route path=":id" element={<VoteDetailRoute />} />
+                    </Route>
+
+                    <Route path="sessions" element={<SessionOverview />} />
+                    <Route path="compare" element={<ComparisonView />} />
+                </Route>
+
+                {/* Catch-all redirect */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        </HashRouter>
     );
-};
+}
 
 export default App;
-

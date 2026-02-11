@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Search, Calendar, CheckCircle, XCircle, AlertCircle, ChevronRight, Filter } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { API_URL } from '../config';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -17,7 +17,8 @@ export const VoteCard = ({ vote, onClick }: { vote: Vote; onClick: () => void })
         const r = result.toLowerCase();
         if (r.includes('priimta') || r.includes('pritarta')) return <CheckCircle className="w-5 h-5 text-green-500" />;
         if (r.includes('nepriimta') || r.includes('atmesta')) return <XCircle className="w-5 h-5 text-red-500" />;
-        return <AlertCircle className="w-5 h-5 text-yellow-500" />;
+        // Replace yellow alert icon with neutral primary color
+        return <AlertCircle className="w-5 h-5 text-primary" />;
     };
 
     return (

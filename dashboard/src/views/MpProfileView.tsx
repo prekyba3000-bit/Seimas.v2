@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Building2, Vote, TrendingUp, Calendar, ExternalLink } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { API_URL } from '../config';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -23,7 +23,8 @@ const VoteBadge = ({ choice }: { choice: string }) => {
     const colors: Record<string, string> = {
         'Už': 'bg-green-500/10 text-green-400 border-green-500/20',
         'Prieš': 'bg-red-500/10 text-red-400 border-red-500/20',
-        'Susilaikė': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+        // Neutralize yellow -> use neutral surface + primary text + border token
+        'Susilaikė': 'bg-background text-primary border-border',
         'Nedalyvavo': 'bg-gray-500/10 text-gray-400 border-gray-500/20'
     };
     return (
