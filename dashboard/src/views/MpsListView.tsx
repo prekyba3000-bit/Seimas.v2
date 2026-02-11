@@ -1,16 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Search, Building2, ChevronRight, Filter } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Users, Search, Building2, ChevronRight, Filter, ArrowUpDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import { API_URL } from '../config';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { MpCard } from '../components/MpCard';
+import { sortMps, SORT_OPTIONS, SortOption } from '../utils/sorting';
 
 // Main MPs List View
 const MpsListView = () => {
     const [mps, setMps] = useState<any[]>([]);
     const [search, setSearch] = useState('');
     const [partyFilter, setPartyFilter] = useState<string | null>(null);
+    const [sortBy, setSortBy] = useState<SortOption>('name_asc');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -27,15 +29,18 @@ const MpsListView = () => {
     }, []);
 
     // Get unique parties for filter
-    const parties = [...new Set(mps.map(m => m.party).filter(Boolean))].sort();
+    const parties = useMemo(() => [...new Set(mps.map(m => m.party).filter(Boolean))].sort(), [mps]);
 
-    // Filter MPs
-    const filtered = mps.filter(mp => {
-        const matchesSearch = (mp.name || mp.display_name || '').toLowerCase().includes(search.toLowerCase());
-        const matchesParty = !partyFilter || (mp.party || mp.current_party) === partyFilter;
-        const isActive = mp.is_active !== false; // Show only active MPs
-        return matchesSearch && matchesParty && isActive;
-    });
+    // Filter & Sort MPs
+    const processedMps = useMemo(() => {
+        const filtered = mps.filter(mp => {
+            const matchesSearch = (mp.name || mp.display_name || '').toLowerCase().includes(search.toLowerCase());
+            const matchesParty = !partyFilter || (mp.party || mp.current_party) === partyFilter;
+            const isActive = mp.is_active !== false; // Show only active MPs
+            return matchesSearch && matchesParty && isActive;
+        });
+        return sortMps(filtered, sortBy);
+    }, [mps, search, partyFilter, sortBy]);
 
     const handleMpClick = (mpId: string) => {
         // eslint-disable-next-line
@@ -67,39 +72,65 @@ const MpsListView = () => {
                         borderColor: 'var(--glass-border)',
                     }}
                 >
-                    <span style={{ color: 'var(--text-primary)' }}>{filtered.length}</span>
+                    <span style={{ color: 'var(--text-primary)' }}>{processedMps.length}</span>
                     <span className="ml-1" style={{ color: 'var(--text-secondary)' }}>members</span>
                 </div>
             </div>
 
-            {/* Smart Search - Unified Input to Reduce Choice Paralysis */}
+            {/* Smart Search & Filter Bar */}
             <Card className="p-4" style={{ backgroundColor: 'var(--background-elevated)' }}>
-                <div className="relative group">
-                    <Search
-                        className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors"
-                        style={{
-                            color: 'var(--text-secondary)',
-                        }}
-                    />
-                    <input
-                        type="text"
-                        placeholder="Search by name or party..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-1 transition-all"
-                        style={{
-                            backgroundColor: 'var(--background-surface)',
-                            borderColor: 'var(--glass-border)',
-                            color: 'var(--text-primary)',
-                        }}
-                        onFocus={(e) => {
-                            e.currentTarget.style.borderColor = 'var(--primary-500)';
-                        }}
-                        onBlur={(e) => {
-                            e.currentTarget.style.borderColor = 'var(--glass-border)';
-                        }}
-                    />
+                <div className="flex flex-col md:flex-row gap-4">
+                    {/* Search Input */}
+                    <div className="relative group flex-1">
+                        <Search
+                            className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors"
+                            style={{ color: 'var(--text-secondary)' }}
+                        />
+                        <input
+                            type="text"
+                            placeholder="Search by name or party..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="w-full pl-11 pr-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-1 transition-all"
+                            style={{
+                                backgroundColor: 'var(--background-surface)',
+                                borderColor: 'var(--glass-border)',
+                                color: 'var(--text-primary)',
+                            }}
+                            onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--primary-500)'; }}
+                            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--glass-border)'; }}
+                        />
+                    </div>
+
+                    {/* Sort Dropdown */}
+                    <div className="relative min-w-[200px]">
+                        <ArrowUpDown
+                            className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4"
+                            style={{ color: 'var(--text-secondary)' }}
+                        />
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value as SortOption)}
+                            className="w-full pl-11 pr-8 py-3 border rounded-xl text-sm appearance-none focus:outline-none focus:ring-1 transition-all cursor-pointer"
+                            style={{
+                                backgroundColor: 'var(--background-surface)',
+                                borderColor: 'var(--glass-border)',
+                                color: 'var(--text-primary)',
+                            }}
+                        >
+                            {SORT_OPTIONS.map(opt => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronRight
+                            className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 rotate-90 pointer-events-none"
+                            style={{ color: 'var(--text-secondary)' }}
+                        />
+                    </div>
                 </div>
+
                 {(search || partyFilter) && (
                     <div className="mt-3 flex items-center justify-between">
                         <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
@@ -135,7 +166,7 @@ const MpsListView = () => {
                 <>
                     {/* MPs Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filtered.map(mp => (
+                        {processedMps.map(mp => (
                             <MpCard
                                 key={mp.id}
                                 mp={mp}
