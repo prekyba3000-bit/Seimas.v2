@@ -168,19 +168,32 @@ def get_mps():
 
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT id, display_name, current_party, photo_url, is_active
-                FROM politicians
-                WHERE is_active = TRUE
-                ORDER BY display_name
+                SELECT
+                    p.id,
+                    p.display_name,
+                    p.full_name_normalized,
+                    p.current_party,
+                    p.is_active,
+                    p.photo_url,
+                    COALESCE(s.total_votes_cast, 0) AS vote_count,
+                    COALESCE(s.attendance_percentage, 0) AS attendance,
+                    s.most_frequent_vote
+                FROM politicians p
+                LEFT JOIN mp_stats_summary s ON p.id = s.mp_id
+                ORDER BY p.full_name_normalized;
             """)
             rows = cur.fetchall()
             return [
                 {
                     "id": str(row["id"]),
                     "name": row["display_name"],
+                    "normalized_name": row["full_name_normalized"],
                     "party": row["current_party"],
-                    "photo": row["photo_url"],
-                    "active": row["is_active"],
+                    "is_active": row["is_active"],
+                    "photo_url": row["photo_url"],
+                    "vote_count": row["vote_count"],
+                    "attendance": float(row["attendance"]),
+                    "vote_mode": row["most_frequent_vote"]
                 }
                 for row in rows
             ]
