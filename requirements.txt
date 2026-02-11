@@ -6,9 +6,9 @@ requests
 unidecode
 defusedxml
 beautifulsoup4
-pandas
-openpyxl
-lxml
+# pandas - removed to save build size on Render
+# openpyxl - removed
+# lxml - removed
 pytest
 pytest-asyncio
 httpx
