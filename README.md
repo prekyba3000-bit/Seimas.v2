@@ -19,6 +19,10 @@ The backend is Dockerized and deploys automatically to Render when changes are p
 ### 2. Frontend (Vercel)
 The dashboard is connected to Vercel and rebuilds on git push.
 - **Project Settings**: Root directory `dashboard/`.
+- **Environment Variables**:
+    - `VITE_API_URL`: Set this to `https://seimas-api.onrender.com` (Your Render Backend URL).
+    
+    > **Note (v2.0.1+):** We currently have a hardcoded fallback in `src/config.ts` to ensure stability. Once you have configured this environment variable in Vercel, we can revert the hardcoded fallback in a future release.
 
 ### 3. Database Automation (GitHub Actions)
 We use GitHub Actions to keep the data fresh without overloading the API.
