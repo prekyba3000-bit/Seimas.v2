@@ -3,10 +3,10 @@ import psycopg2
 from psycopg2.extras import execute_values
 import os
 import time
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 # --- Configuration ---
-DB_DSN = os.getenv("DB_DSN", "postgres://julio:jou@localhost:5432/transparency_db")
+DB_DSN = os.getenv("DB_DSN")
 BASE_SEARCH_URL = "https://e-seimas.lrs.lt/rs/legalactproject/search/find"
 
 def get_db():

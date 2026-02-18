@@ -9,7 +9,7 @@ import aiohttp
 import psycopg2
 import asyncio
 from datetime import datetime
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 DB_DSN = os.getenv('DB_DSN')
 if not DB_DSN:

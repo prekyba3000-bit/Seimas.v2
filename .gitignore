@@ -40,3 +40,5 @@ storybook-static/
 .claude/
 _bmad/
 _bmad-output/
+.vercel
+.env*.local

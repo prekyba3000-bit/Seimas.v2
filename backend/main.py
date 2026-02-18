@@ -1,13 +1,15 @@
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from psycopg2.pool import ThreadedConnectionPool
 import os
 import time
 import sys
+import threading
+import datetime
 from typing import List, Dict
 from collections import defaultdict
 
@@ -22,7 +24,55 @@ except ImportError as e:
     sync_mps = None
     sync_votes = None
 
-app = FastAPI(title="Skaidrus Seimas API")
+REFRESH_INTERVAL_SEC = int(os.getenv("REFRESH_INTERVAL", "1800"))  # 30 min default
+
+_refresh_state = {
+    "last_refresh": None,
+    "last_error": None,
+    "refresh_count": 0,
+}
+_refresh_stop = threading.Event()
+
+
+def _refresh_materialized_view():
+    """Refresh mp_stats_summary. Runs in a background thread."""
+    try:
+        if not DB_DSN:
+            _refresh_state["last_error"] = "DB_DSN not set"
+            return
+        conn = psycopg2.connect(DB_DSN)
+        conn.autocommit = True
+        with conn.cursor() as cur:
+            cur.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY mp_stats_summary;")
+        conn.close()
+        _refresh_state["last_refresh"] = datetime.datetime.utcnow().isoformat() + "Z"
+        _refresh_state["last_error"] = None
+        _refresh_state["refresh_count"] += 1
+        print(f"[scheduler] Materialized view refreshed at {_refresh_state['last_refresh']}")
+    except Exception as e:
+        _refresh_state["last_error"] = str(e)
+        print(f"[scheduler] Refresh failed: {e}")
+
+
+def _scheduler_loop():
+    """Periodically refresh the materialized view until stop event is set."""
+    while not _refresh_stop.is_set():
+        _refresh_materialized_view()
+        _refresh_stop.wait(timeout=REFRESH_INTERVAL_SEC)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    t = threading.Thread(target=_scheduler_loop, daemon=True, name="mv-refresh")
+    t.start()
+    print(f"[scheduler] Started background refresh every {REFRESH_INTERVAL_SEC}s")
+    yield
+    _refresh_stop.set()
+    t.join(timeout=5)
+    print("[scheduler] Stopped background refresh")
+
+
+app = FastAPI(title="Skaidrus Seimas API", lifespan=lifespan)
 
 # Suppress browser 404s for common static files
 @app.get("/favicon.ico", include_in_schema=False)
@@ -398,7 +448,7 @@ def get_vote(vote_id: str):
 
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("""
-                SELECT id, sitting_date, title, description, url, result_type
+                SELECT id, seimas_vote_id, sitting_date, title, description, url, result_type
                 FROM votes
                 WHERE id = %s::integer
             """, (vote_id,))
@@ -407,13 +457,14 @@ def get_vote(vote_id: str):
             if not vote:
                 raise HTTPException(status_code=404, detail="Vote not found")
 
+            # mp_votes.vote_id references votes.seimas_vote_id, not votes.id
             cur.execute("""
                 SELECT p.display_name, p.current_party, mv.vote_choice
                 FROM mp_votes mv
                 JOIN politicians p ON mv.politician_id = p.id
-                WHERE mv.vote_id = %s::integer
+                WHERE mv.vote_id = %s
                 ORDER BY p.current_party, p.display_name
-            """, (vote_id,))
+            """, (vote["seimas_vote_id"],))
             votes_rows = cur.fetchall()
 
             stats = defaultdict(int)
@@ -464,6 +515,24 @@ def health():
         "status": "ok" if db_status == "connected" else "degraded",
         "database": db_status,
     }
+
+
+@app.get("/api/admin/refresh-status")
+def refresh_status():
+    """Check the status of the background materialized view refresh."""
+    return {
+        "interval_seconds": REFRESH_INTERVAL_SEC,
+        **_refresh_state,
+    }
+
+
+@app.post("/api/admin/refresh")
+def trigger_refresh(background_tasks: BackgroundTasks, secret: str):
+    """Manually trigger a materialized view refresh."""
+    if secret != os.getenv("SYNC_SECRET", "dev-secret"):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    background_tasks.add_task(_refresh_materialized_view)
+    return {"status": "Refresh triggered"}
 
 
 @app.post("/api/admin/sync/mps")

@@ -8,8 +8,6 @@ async def test_health_endpoint():
         response = await ac.get("/health")
     assert response.status_code == 200
     data = response.json()
-    # Health check now includes DB status
-    assert data["orchestra"] == "conducting"
     assert "status" in data
     assert "database" in data
 
