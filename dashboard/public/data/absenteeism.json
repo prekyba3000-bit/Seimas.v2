@@ -1,86 +1,86 @@
 {
   "title": "Wall of Shame - Lowest Participation MPs",
   "description": "Bottom 10 active MPs by plenary voting participation (>20 votes, is_active)",
-  "generated_at": "2026-02-09T04:09:30.261774",
+  "generated_at": "2026-02-19T05:19:56.963486",
   "absentees": [
     {
       "rank": 1,
       "name": "Jurgita Sejonienė",
       "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=84620",
-      "votes_cast": 3305,
-      "total_possible": 3467,
-      "participation_pct": 95.3
+      "votes_cast": 2364,
+      "total_possible": 2509,
+      "participation_pct": 94.2
     },
     {
       "rank": 2,
       "name": "Vytautas Juozapaitis",
       "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=73575",
-      "votes_cast": 3451,
-      "total_possible": 3467,
-      "participation_pct": 99.5
+      "votes_cast": 2493,
+      "total_possible": 2509,
+      "participation_pct": 99.4
     },
     {
       "rank": 3,
       "name": "Rimas Jonas Jankūnas",
       "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=90970",
-      "votes_cast": 3451,
-      "total_possible": 3467,
-      "participation_pct": 99.5
+      "votes_cast": 2493,
+      "total_possible": 2509,
+      "participation_pct": 99.4
     },
     {
       "rank": 4,
-      "name": "Paulius Visockas",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=90971",
-      "votes_cast": 3451,
-      "total_possible": 3467,
-      "participation_pct": 99.5
+      "name": "Rūta Miliūtė",
+      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=79132",
+      "votes_cast": 2493,
+      "total_possible": 2509,
+      "participation_pct": 99.4
     },
     {
       "rank": 5,
-      "name": "Rūta Miliūtė",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=79132",
-      "votes_cast": 3451,
-      "total_possible": 3467,
-      "participation_pct": 99.5
+      "name": "Paulius Visockas",
+      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=90971",
+      "votes_cast": 2493,
+      "total_possible": 2509,
+      "participation_pct": 99.4
     },
     {
       "rank": 6,
-      "name": "Arvydas Anušauskas",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=53916",
-      "votes_cast": 3467,
-      "total_possible": 3467,
+      "name": "Kazys Starkevičius",
+      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=47839",
+      "votes_cast": 2509,
+      "total_possible": 2509,
       "participation_pct": 100.0
     },
     {
       "rank": 7,
-      "name": "Tomas Domarkas",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=90945",
-      "votes_cast": 3467,
-      "total_possible": 3467,
+      "name": "Viktorija Čmilytė-Nielsen",
+      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=71563",
+      "votes_cast": 2509,
+      "total_possible": 2509,
       "participation_pct": 100.0
     },
     {
       "rank": 8,
-      "name": "Aidas Gedvilas",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=47855",
-      "votes_cast": 3467,
-      "total_possible": 3467,
+      "name": "Vytautas Sinica",
+      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=74854",
+      "votes_cast": 2509,
+      "total_possible": 2509,
       "participation_pct": 100.0
     },
     {
       "rank": 9,
-      "name": "Virgilijus Alekna",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=79162",
-      "votes_cast": 3467,
-      "total_possible": 3467,
+      "name": "Remigijus Žemaitaitis",
+      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=65703",
+      "votes_cast": 2509,
+      "total_possible": 2509,
       "participation_pct": 100.0
     },
     {
       "rank": 10,
-      "name": "Eugenijus Gentvilas",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=146",
-      "votes_cast": 3467,
-      "total_possible": 3467,
+      "name": "Martynas Katelynas",
+      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=83412",
+      "votes_cast": 2509,
+      "total_possible": 2509,
       "participation_pct": 100.0
     }
   ]
