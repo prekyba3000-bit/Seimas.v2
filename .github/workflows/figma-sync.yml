@@ -20,7 +20,7 @@ jobs:
           python-version: '3.x'
 
       - name: Write FIGMA_TOKENS_JSON to file
-        if: secrets.FIGMA_TOKENS_JSON != ''
+        if: ${{ secrets.FIGMA_TOKENS_JSON != '' }}
         run: |
           echo "$FIGMA_TOKENS_JSON" > figma_tokens.json
         env:
