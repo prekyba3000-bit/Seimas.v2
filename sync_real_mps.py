@@ -4,10 +4,12 @@ MISSION: REALITY SYNC - Photo Sync & Ghost Buster Engine
 Purpose: Fetch real MP photos, filter inactive MPs, update database
 """
 import os
+import re
 import sys
 import aiohttp
 import psycopg2
 import asyncio
+import unidecode
 from datetime import datetime
 import defusedxml.ElementTree as ET
 
@@ -17,7 +19,7 @@ if not DB_DSN:
     sys.exit(1)
 
 API_BASE = "https://apps.lrs.lt/sip/p2b"
-PHOTO_URL_TEMPLATE = "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id={asmens_id}"
+PHOTO_BASE = "https://www.lrs.lt/SIPIS/sn_foto/2024"
 
 async def fetch_mps_from_api():
     """Fetch all MPs from LRS API"""
@@ -66,7 +68,9 @@ def parse_mps_from_xml(xml_content):
                     except ValueError:
                         pass
                 
-                photo_url = PHOTO_URL_TEMPLATE.format(asmens_id=asmens_id)
+                slug = unidecode.unidecode(f"{vardas} {pavarde}").lower().strip()
+                slug = re.sub(r"[^a-z0-9]+", "_", slug).strip("_")
+                photo_url = f"{PHOTO_BASE}/{slug}.jpg"
                 
                 mps.append({
                     'asmens_id': asmens_id,
