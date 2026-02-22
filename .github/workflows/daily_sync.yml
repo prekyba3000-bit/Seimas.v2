@@ -46,10 +46,19 @@ jobs:
           DB_DSN: ${{ secrets.DB_DSN }}
         run: python3 ingest_votes_v2.py
 
-      - name: Refresh Materialized View
+      - name: Recreate Materialized View (day-based attendance)
         env:
           DB_DSN: ${{ secrets.DB_DSN }}
-        run: python3 -c "import psycopg2, os; c=psycopg2.connect(os.environ['DB_DSN']); c.autocommit=True; c.cursor().execute('REFRESH MATERIALIZED VIEW CONCURRENTLY mp_stats_summary'); c.close(); print('Materialized view refreshed')"
+        run: python3 -c "
+import psycopg2, os
+c = psycopg2.connect(os.environ['DB_DSN'])
+c.autocommit = True
+cur = c.cursor()
+with open('migrations/002_create_stats_view.sql') as f:
+    cur.execute(f.read())
+c.close()
+print('Materialized view recreated with day-based attendance')
+"
 
       - name: Export Stats JSON
         env:

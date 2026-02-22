@@ -1,10 +1,7 @@
 """
-MISSION: FINAL DATA POLISH
-Export clean absenteeism statistics with real faces and no ghosts.
-- Filters: is_active = TRUE (no ghosts/resigned MPs)
-- Filters: votes_cast > 20 (excludes very inactive MPs)
-- Includes: real photo_url from database
-- Output: dashboard/public/data/absenteeism.json
+Wall of Shame — Lowest Attendance by Sitting Day
+Attendance = number of sitting days the MP showed up (cast at least one
+non-Nedalyvavo vote) divided by total sitting days they were registered for.
 """
 import os
 import json
@@ -17,35 +14,33 @@ if not DB_DSN:
     print("ERROR: DB_DSN environment variable not set")
     exit(1)
 
-# Connect to database
 conn = psycopg2.connect(DB_DSN)
 cur = conn.cursor()
 
-# The "Anti-Ghost" Query
-# 1. Filters out inactive MPs (is_active = false) - no resigned/ghost MPs
-# 2. Filters out new/inactive MPs with too few votes (< 20) to avoid false positives
-# 3. GROUP BY ensures distinct MP records (no duplicates)
 SQL = """
-WITH mp_stats AS (
-    SELECT 
+WITH day_attendance AS (
+    SELECT
         p.id,
         p.display_name,
         p.photo_url,
-        COUNT(mv.vote_id) as votes_cast,
-        (SELECT COUNT(*) FROM votes) as total_possible
+        COUNT(DISTINCT v.sitting_date) AS total_days,
+        COUNT(DISTINCT v.sitting_date) FILTER (
+            WHERE mv.vote_choice != 'Nedalyvavo'
+        ) AS days_present
     FROM politicians p
-    LEFT JOIN mp_votes mv ON p.id = mv.politician_id
-    WHERE p.is_active = TRUE 
+    JOIN mp_votes mv ON p.id = mv.politician_id
+    JOIN votes v ON mv.vote_id = v.seimas_vote_id
+    WHERE p.is_active = TRUE
     GROUP BY p.id, p.display_name, p.photo_url
-    HAVING COUNT(mv.vote_id) > 20
+    HAVING COUNT(DISTINCT v.sitting_date) > 5
 )
-SELECT 
+SELECT
     display_name,
     photo_url,
-    votes_cast,
-    total_possible,
-    ROUND((votes_cast::numeric / NULLIF(total_possible, 0)) * 100, 1) as pct
-FROM mp_stats
+    days_present,
+    total_days,
+    ROUND((days_present::numeric / NULLIF(total_days, 0)) * 100, 1) AS pct
+FROM day_attendance
 ORDER BY pct ASC
 LIMIT 10;
 """
@@ -53,36 +48,29 @@ LIMIT 10;
 cur.execute(SQL)
 rows = cur.fetchall()
 
-# Format JSON with rank
 absentees = []
-for rank, (name, photo_url, votes_cast, total_possible, pct) in enumerate(rows, 1):
+for rank, (name, photo_url, days_present, total_days, pct) in enumerate(rows, 1):
     absentees.append({
         "rank": rank,
         "name": name,
         "photo_url": photo_url,
-        "votes_cast": int(votes_cast),
-        "total_possible": int(total_possible),
+        "days_present": int(days_present),
+        "total_days": int(total_days),
         "participation_pct": float(pct)
     })
 
 data = {
-    "title": "Wall of Shame - Lowest Participation MPs",
-    "description": "Bottom 10 active MPs by plenary voting participation (>20 votes, is_active)",
+    "title": "Gėdos siena — žemiausias dalyvavimas",
+    "description": "10 aktyviausiai praleistų posėdžių dienų narių (pagal faktinį dalyvavimą posėdžių dienomis)",
     "generated_at": datetime.now().isoformat(),
     "absentees": absentees
 }
 
-# Create directory if needed
 os.makedirs("dashboard/public/data", exist_ok=True)
 
-# Save JSON
 with open("dashboard/public/data/absenteeism.json", "w", encoding='utf-8') as f:
     json.dump(data, f, indent=2, ensure_ascii=False)
 
-print(f"✅ Exported {len(absentees)} unique, active MPs to absenteeism.json")
+print(f"Exported {len(absentees)} MPs to absenteeism.json (by sitting day)")
 if absentees:
-    print(f"   Lowest participation: {absentees[0]['name']} - {absentees[0]['participation_pct']}%")
-    print(f"   Highest participation: {absentees[-1]['name']} - {absentees[-1]['participation_pct']}%")
-
-cur.close()
-conn.close()
+    print(f"  Lowest: {absentees[0]['name']} — {absentees[0]['participation_pct']}% ({absentees[0]['days_present']}/{absentees[0]['total_days']} dienų)")

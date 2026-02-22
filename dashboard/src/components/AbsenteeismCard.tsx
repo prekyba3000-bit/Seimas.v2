@@ -5,8 +5,10 @@ interface AbsenteeRecord {
   rank: number;
   name: string;
   photo_url?: string;
-  votes_cast: number;
-  total_possible: number;
+  days_present?: number;
+  total_days?: number;
+  votes_cast?: number;
+  total_possible?: number;
   participation_pct: number;
 }
 
@@ -154,7 +156,7 @@ export const AbsenteeismCard: React.FC = () => {
                     {record.name}
                   </p>
                   <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                    {record.votes_cast} / {record.total_possible} votes
+                    {record.days_present ?? record.votes_cast} / {record.total_days ?? record.total_possible} posėdžių dienų
                   </p>
                 </div>
               </div>
