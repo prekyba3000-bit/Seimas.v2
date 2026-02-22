@@ -242,7 +242,28 @@ def get_mps():
             raise HTTPException(status_code=500, detail="Database connection failed")
 
         with conn.cursor() as cur:
+            has_stats = _table_exists(cur, "mp_stats_summary")
+
+            # Check if social_links column exists
             cur.execute("""
+                SELECT column_name FROM information_schema.columns
+                WHERE table_name = 'politicians' AND column_name = 'social_links'
+            """)
+            has_social = cur.fetchone() is not None
+
+            social_col = "p.social_links," if has_social else ""
+            stats_join = "LEFT JOIN mp_stats_summary s ON p.id = s.mp_id" if has_stats else ""
+            stats_cols = """
+                    COALESCE(s.total_votes_cast, 0) AS vote_count,
+                    COALESCE(s.attendance_percentage, 0) AS attendance,
+                    s.most_frequent_vote
+            """ if has_stats else """
+                    0 AS vote_count,
+                    0 AS attendance,
+                    NULL AS most_frequent_vote
+            """
+
+            cur.execute(f"""
                 SELECT
                     p.id,
                     p.display_name,
@@ -250,12 +271,10 @@ def get_mps():
                     p.current_party,
                     p.is_active,
                     p.photo_url,
-                    p.social_links,
-                    COALESCE(s.total_votes_cast, 0) AS vote_count,
-                    COALESCE(s.attendance_percentage, 0) AS attendance,
-                    s.most_frequent_vote
+                    {social_col}
+                    {stats_cols}
                 FROM politicians p
-                LEFT JOIN mp_stats_summary s ON p.id = s.mp_id
+                {stats_join}
                 ORDER BY p.full_name_normalized;
             """)
             rows = cur.fetchall()
@@ -267,7 +286,7 @@ def get_mps():
                     "party": row["current_party"],
                     "is_active": row["is_active"],
                     "photo_url": row["photo_url"],
-                    "social_links": row["social_links"] or {},
+                    "social_links": row.get("social_links") or {},
                     "vote_count": row["vote_count"],
                     "attendance": float(row["attendance"]),
                     "vote_mode": row["most_frequent_vote"]
