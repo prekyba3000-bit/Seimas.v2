@@ -86,6 +86,7 @@ jobs:
         run: |
           git add dashboard/public/data/absenteeism.json
           git commit -m "data: daily sync [skip ci]"
+          git pull --rebase origin master
           git push
 
       - name: Sync Complete
