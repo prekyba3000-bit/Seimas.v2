@@ -98,6 +98,88 @@ export interface HeroesVillainsResponse {
   watchlist: AccountabilityPerson[];
 }
 
+// ── Forensic Engine types ────────────────────────────────────────────────────
+
+export interface ChronoItem {
+  amendment_id: string;
+  word_count: number;
+  citation_count: number;
+  complexity: number;
+  drafting_window_min: number | null;
+  zscore: number | null;
+  cluster_id: number | null;
+}
+
+export interface ChronoCluster {
+  cluster_id: number;
+  size: number;
+  min_zscore: number | null;
+}
+
+export interface ChronoResponse {
+  items: ChronoItem[];
+  clusters: ChronoCluster[];
+}
+
+export interface BenfordItem {
+  mp_id: string;
+  sample_size: number;
+  chi_squared: number;
+  p_value: number;
+  mad: number;
+  digit_distribution: Record<string, number>;
+  conformity: string;
+  flagged_fields: { field: string; mad: number }[];
+}
+
+export interface BenfordResponse {
+  items: BenfordItem[];
+}
+
+export interface LoyaltyMp {
+  mp_id: string;
+  name: string;
+  party: string;
+  avg_alignment_30d: number;
+  trend: { date: string; alignment: number }[];
+}
+
+export interface LoyaltyResponse {
+  alignment: LoyaltyMp[];
+  total_mps: number;
+}
+
+export interface PhantomItem {
+  mp_id: string;
+  target_code: string;
+  target_name: string;
+  hops: number;
+  path: string[];
+  procurement_hit: boolean;
+  debtor_hit: boolean;
+  detected_at: string | null;
+}
+
+export interface PhantomResponse {
+  items: PhantomItem[];
+}
+
+export interface VoteGeoItem {
+  vote_id: number;
+  title: string | null;
+  date: string | null;
+  expected: { for: number; against: number; abstain: number };
+  actual: { for: number; against: number; abstain: number };
+  sigma: number;
+  anomaly_type: string | null;
+  faction_deviations: Record<string, unknown>;
+}
+
+export interface VoteGeoResponse {
+  items: VoteGeoItem[];
+  total_analyzed: number;
+}
+
 // ── Request helper ───────────────────────────────────────────────────────────
 
 class ApiError extends Error {
@@ -145,4 +227,19 @@ export const api = {
 
   getHeroesVillains: (limit = 10) =>
     request<HeroesVillainsResponse>(`/accountability/heroes-villains?limit=${limit}`),
+
+  getChronoForensics: (limit = 50) =>
+    request<ChronoResponse>(`/forensics/chrono?limit=${limit}`),
+
+  getBenfordResults: (limit = 50) =>
+    request<BenfordResponse>(`/forensics/benford?limit=${limit}`),
+
+  getLoyaltyGraph: () =>
+    request<LoyaltyResponse>("/forensics/loyalty"),
+
+  getPhantomNetwork: (limit = 50) =>
+    request<PhantomResponse>(`/forensics/phantom?limit=${limit}`),
+
+  getVoteGeometry: (limit = 30) =>
+    request<VoteGeoResponse>(`/forensics/vote-geometry?limit=${limit}`),
 };
