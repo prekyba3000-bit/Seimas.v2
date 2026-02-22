@@ -20,9 +20,13 @@ jobs:
           python-version: '3.x'
 
       - name: Write FIGMA_TOKENS_JSON to file
-        if: ${{ secrets.FIGMA_TOKENS_JSON != '' }}
         run: |
-          echo "$FIGMA_TOKENS_JSON" > figma_tokens.json
+          if [ -n "$FIGMA_TOKENS_JSON" ]; then
+            echo "$FIGMA_TOKENS_JSON" > figma_tokens.json
+          else
+            echo '{}' > figma_tokens.json
+            echo "⚠️  FIGMA_TOKENS_JSON secret not set, using empty tokens"
+          fi
         env:
           FIGMA_TOKENS_JSON: ${{ secrets.FIGMA_TOKENS_JSON }}
 
