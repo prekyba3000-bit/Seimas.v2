@@ -1,12 +1,12 @@
 {
   "title": "Wall of Shame - Lowest Participation MPs",
   "description": "Bottom 10 active MPs by plenary voting participation (>20 votes, is_active)",
-  "generated_at": "2026-02-22T05:14:17.744130",
+  "generated_at": "2026-02-22T05:19:57.745419",
   "absentees": [
     {
       "rank": 1,
       "name": "Jurgita Sejonienė",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=84620",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/jurgita_sejoniene.jpg",
       "votes_cast": 2364,
       "total_possible": 2509,
       "participation_pct": 94.2
@@ -14,7 +14,7 @@
     {
       "rank": 2,
       "name": "Vytautas Juozapaitis",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=73575",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/vytautas_juozapaitis.jpg",
       "votes_cast": 2493,
       "total_possible": 2509,
       "participation_pct": 99.4
@@ -22,7 +22,7 @@
     {
       "rank": 3,
       "name": "Rimas Jonas Jankūnas",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=90970",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/rimas_jonas_jankunas.jpg",
       "votes_cast": 2493,
       "total_possible": 2509,
       "participation_pct": 99.4
@@ -30,7 +30,7 @@
     {
       "rank": 4,
       "name": "Rūta Miliūtė",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=79132",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/ruta_miliute.jpg",
       "votes_cast": 2493,
       "total_possible": 2509,
       "participation_pct": 99.4
@@ -38,7 +38,7 @@
     {
       "rank": 5,
       "name": "Paulius Visockas",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=90971",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/paulius_visockas.jpg",
       "votes_cast": 2493,
       "total_possible": 2509,
       "participation_pct": 99.4
@@ -46,7 +46,7 @@
     {
       "rank": 6,
       "name": "Kazys Starkevičius",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=47839",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/kazys_starkevicius.jpg",
       "votes_cast": 2509,
       "total_possible": 2509,
       "participation_pct": 100.0
@@ -54,7 +54,7 @@
     {
       "rank": 7,
       "name": "Viktorija Čmilytė-Nielsen",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=71563",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/viktorija_cmilyte_nielsen.jpg",
       "votes_cast": 2509,
       "total_possible": 2509,
       "participation_pct": 100.0
@@ -62,7 +62,7 @@
     {
       "rank": 8,
       "name": "Vytautas Sinica",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=74854",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/vytautas_sinica.jpg",
       "votes_cast": 2509,
       "total_possible": 2509,
       "participation_pct": 100.0
@@ -70,7 +70,7 @@
     {
       "rank": 9,
       "name": "Remigijus Žemaitaitis",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=65703",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/remigijus_zemaitaitis.jpg",
       "votes_cast": 2509,
       "total_possible": 2509,
       "participation_pct": 100.0
@@ -78,7 +78,7 @@
     {
       "rank": 10,
       "name": "Martynas Katelynas",
-      "photo_url": "https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id=83412",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/martynas_katelynas.jpg",
       "votes_cast": 2509,
       "total_possible": 2509,
       "participation_pct": 100.0
