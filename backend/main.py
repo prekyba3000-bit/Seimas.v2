@@ -104,7 +104,7 @@ DB_DSN = os.getenv("DB_DSN")
 SYNC_SECRET = os.getenv("SYNC_SECRET")
 
 if not SYNC_SECRET:
-    raise RuntimeError("Missing required SYNC_SECRET environment variable")
+    print("WARNING: SYNC_SECRET not set — admin endpoints will reject all requests")
 
 # Rate limiter (60 requests per minute per IP)
 RATE_LIMIT = 60
@@ -130,7 +130,10 @@ def _table_exists(cur, table_name: str) -> bool:
 def _require_admin_auth(authorization: Optional[str]) -> None:
     """
     Require Authorization: Bearer <SYNC_SECRET> for admin endpoints.
+    When SYNC_SECRET is not configured, all admin requests are rejected.
     """
+    if not SYNC_SECRET:
+        raise HTTPException(status_code=503, detail="Admin endpoints disabled — SYNC_SECRET not configured")
     if not authorization:
         raise HTTPException(status_code=401, detail="Unauthorized")
     scheme, _, token = authorization.partition(" ")
