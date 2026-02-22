@@ -1,3 +1,4 @@
+import re
 import requests
 import psycopg2
 from psycopg2.extras import execute_values
@@ -9,11 +10,18 @@ from utils import fetch_with_retry
 
 DB_DSN = os.getenv("DB_DSN") 
 SEIMAS_API_URL = "https://apps.lrs.lt/sip/p2b.ad_seimo_nariai"
+PHOTO_BASE = "https://www.lrs.lt/SIPIS/sn_foto/2024"
 
 def normalize(name):
     if not name: return ""
     clean = unidecode.unidecode(name).lower().strip()
-    return " ".join(clean.split())  # Collapse multiple spaces
+    return " ".join(clean.split())
+
+def build_photo_url(first_name, last_name):
+    """Build photo URL from name: 'Agnė' 'Bilotaitė' -> agne_bilotaite.jpg"""
+    slug = unidecode.unidecode(f"{first_name} {last_name}").lower().strip()
+    slug = re.sub(r"[^a-z0-9]+", "_", slug).strip("_")
+    return f"{PHOTO_BASE}/{slug}.jpg"
 
 def parse_date(date_str):
     if not date_str: return None
@@ -59,9 +67,9 @@ def sync_db():
                 party = pareigos.get('padalinio_pavadinimas')
                 break
         
-        # Photo URL - Heuristic based on pattern or children
-        # Seimas API typically has a photo link or thumb
-        photo_url = f"https://www.lrs.lt/sip/p2b.ad_seimo_nario_nuotrauka?asmens_id={mp_id}"
+        first_name = node.get('vardas') or ''
+        last_name = node.get('pavardė') or ''
+        photo_url = build_photo_url(first_name, last_name)
         bio = "" # Bio requires separate fetch or child node
         
         mps.append((
