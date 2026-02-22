@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks, Header
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager, contextmanager
@@ -10,7 +10,7 @@ import time
 import sys
 import threading
 import datetime
-from typing import List, Dict
+from typing import List, Dict, Optional
 from collections import defaultdict
 
 # Add root directory to sys.path to allow importing ingestion scripts
@@ -101,6 +101,10 @@ app.add_middleware(
 )
 
 DB_DSN = os.getenv("DB_DSN")
+SYNC_SECRET = os.getenv("SYNC_SECRET")
+
+if not SYNC_SECRET:
+    raise RuntimeError("Missing required SYNC_SECRET environment variable")
 
 # Rate limiter (60 requests per minute per IP)
 RATE_LIMIT = 60
@@ -121,6 +125,17 @@ def _table_exists(cur, table_name: str) -> bool:
     """Safe table existence check for optional pipeline tables."""
     cur.execute("SELECT to_regclass(%s) AS reg", (f"public.{table_name}",))
     return cur.fetchone()["reg"] is not None
+
+
+def _require_admin_auth(authorization: Optional[str]) -> None:
+    """
+    Require Authorization: Bearer <SYNC_SECRET> for admin endpoints.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or token != SYNC_SECRET:
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 # Connection pool (lazy init)
@@ -679,19 +694,17 @@ def refresh_status():
 
 
 @app.post("/api/admin/refresh")
-def trigger_refresh(background_tasks: BackgroundTasks, secret: str):
+def trigger_refresh(background_tasks: BackgroundTasks, authorization: Optional[str] = Header(default=None)):
     """Manually trigger a materialized view refresh."""
-    if secret != os.getenv("SYNC_SECRET", "dev-secret"):
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_admin_auth(authorization)
     background_tasks.add_task(_refresh_materialized_view)
     return {"status": "Refresh triggered"}
 
 
 @app.post("/api/admin/sync/mps")
-def trigger_sync_mps(background_tasks: BackgroundTasks, secret: str):
+def trigger_sync_mps(background_tasks: BackgroundTasks, authorization: Optional[str] = Header(default=None)):
     """Trigger MP data sync from LRS."""
-    if secret != os.getenv("SYNC_SECRET", "dev-secret"):
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_admin_auth(authorization)
 
     if not sync_mps:
         raise HTTPException(status_code=500, detail="Ingestion script not loaded")
@@ -701,10 +714,9 @@ def trigger_sync_mps(background_tasks: BackgroundTasks, secret: str):
 
 
 @app.post("/api/admin/sync/votes")
-def trigger_sync_votes(background_tasks: BackgroundTasks, secret: str):
+def trigger_sync_votes(background_tasks: BackgroundTasks, authorization: Optional[str] = Header(default=None)):
     """Trigger Vote data sync (recent votes)."""
-    if secret != os.getenv("SYNC_SECRET", "dev-secret"):
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    _require_admin_auth(authorization)
 
     if not sync_votes:
         raise HTTPException(status_code=500, detail="Ingestion script not loaded")
