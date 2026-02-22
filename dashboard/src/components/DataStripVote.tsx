@@ -64,12 +64,14 @@ export function DataStripVote({ title, outcome, votesFor, votesAgainst, timestam
         </p>
       </div>
 
-      {/* Data Column 3 - Vote Counts */}
-      <div className="flex-shrink-0 flex items-center gap-2">
-        <span className="text-xs font-mono text-green-400">{votesFor}</span>
-        <span className="text-xs font-mono text-gray-600">-</span>
-        <span className="text-xs font-mono text-red-400">{votesAgainst}</span>
-      </div>
+      {/* Data Column 3 - Vote Counts (only if available) */}
+      {(votesFor > 0 || votesAgainst > 0) && (
+        <div className="flex-shrink-0 flex items-center gap-2">
+          <span className="text-xs font-mono text-green-400">{votesFor}</span>
+          <span className="text-xs font-mono text-gray-600">-</span>
+          <span className="text-xs font-mono text-red-400">{votesAgainst}</span>
+        </div>
+      )}
 
       {/* Data Column 4 - Result Badge */}
       <div className={`flex-shrink-0 h-5 px-2 flex items-center justify-center rounded-md ${config.badgeBg}`}>

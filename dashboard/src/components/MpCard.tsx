@@ -1,18 +1,7 @@
 import React, { useState } from 'react';
-import { Building2, ChevronRight } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-
-// Party colors from Figma design tokens
-const PARTY_COLORS: Record<string, string> = {
-  'Tėvynės sąjunga': 'var(--party-tevynes-sajunga)',
-  'LSDP': 'var(--status-danger)',
-  'Liberalų sąjūdis': 'var(--status-warning)',
-  'Demokratų sąjunga': 'var(--status-success)',
-  'Laisvės partija': 'var(--primary-500)',
-  'Lietuvos valstiečių ir žaliųjų sąjunga': 'var(--status-success)',
-  'Darbo partija': 'var(--status-info)',
-  'Nemuno aušra': 'var(--status-danger)',
-};
+import { Building2, ChevronRight, TrendingUp, Vote } from 'lucide-react';
+import { Avatar, AvatarFallback } from './ui/avatar';
+import { getPartyColor, getPartyShort } from '../utils/partyColors';
 
 interface MpCardProps {
   name?: string;
@@ -27,47 +16,37 @@ interface MpCardProps {
     current_party?: string;
     photo_url?: string;
     is_active?: boolean;
+    vote_count?: number;
+    attendance?: number;
   };
 }
 
-export function MpCard({
-  name,
-  party,
-  avatarUrl,
-  onClick,
-  mp,
-}: MpCardProps) {
-  // Extract values from mp object if provided, otherwise use direct props
+export function MpCard({ name, party, avatarUrl, onClick, mp }: MpCardProps) {
   const displayName = name || mp?.display_name || mp?.name || 'Unknown';
-  const displayParty = party || mp?.current_party || mp?.party || 'Unknown Party';
+  const displayParty = party || mp?.current_party || mp?.party || 'Unknown';
   const photoUrl = avatarUrl || mp?.photo_url;
-  
+  const voteCount = mp?.vote_count ?? 0;
+  const attendance = mp?.attendance ?? 0;
+
   const [isHovered, setIsHovered] = useState(false);
   const [photoFailed, setPhotoFailed] = useState(false);
 
-  const partyColor = PARTY_COLORS[displayParty] || 'var(--text-secondary)'; // Default to secondary text color
-  const initials = displayName
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+  const partyColor = getPartyColor(displayParty);
+  const partyShort = getPartyShort(displayParty);
+  const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <div
       className="flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all duration-200 backdrop-blur-sm border"
       style={{
         backgroundColor: 'var(--background-surface)',
-        borderColor: 'var(--glass-border)',
-        boxShadow: isHovered
-          ? '0 4px 12px rgba(59, 130, 246, 0.2)'
-          : '0 1px 3px rgba(0, 0, 0, 0.2)',
+        borderColor: isHovered ? partyColor + '40' : 'var(--glass-border)',
+        boxShadow: isHovered ? `0 4px 12px ${partyColor}20` : '0 1px 3px rgba(0, 0, 0, 0.2)',
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={onClick}
     >
-      {/* Avatar with Party Indicator */}
       <div className="relative">
         {!photoFailed && photoUrl ? (
           <div
@@ -93,57 +72,53 @@ export function MpCard({
             }}
           >
             <AvatarFallback
-              className="text-sm transition-colors"
-              style={{
-                backgroundColor: 'var(--background-elevated)',
-                color: 'var(--text-primary)',
-              }}
+              className="text-sm"
+              style={{ backgroundColor: 'var(--background-elevated)', color: 'var(--text-primary)' }}
             >
               {initials}
             </AvatarFallback>
           </Avatar>
         )}
-        {/* Party Color Indicator */}
         <div
           className="absolute bottom-0 right-0 w-4 h-4 rounded-full border-2"
-          style={{
-            backgroundColor: partyColor,
-            borderColor: 'var(--background-surface)',
-          }}
+          style={{ backgroundColor: partyColor, borderColor: 'var(--background-surface)' }}
         />
       </div>
 
-      {/* Text Container */}
       <div className="flex-1 min-w-0">
         <h3
-          className="font-bold transition-colors duration-200 truncate"
-          style={{
-            color: isHovered ? partyColor : 'var(--text-primary)',
-          }}
+          className="font-bold transition-colors duration-200 truncate text-sm"
+          style={{ color: isHovered ? partyColor : 'var(--text-primary)' }}
         >
           {displayName}
         </h3>
-        <div
-          className="flex items-center gap-1.5 text-sm transition-colors"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          <Building2 className="w-3.5 h-3.5" />
-          <span className="truncate">{displayParty}</span>
+        <div className="flex items-center gap-1.5 text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+          <span
+            className="px-1.5 py-0.5 rounded text-[10px] font-bold text-white"
+            style={{ backgroundColor: partyColor }}
+          >
+            {partyShort}
+          </span>
+        </div>
+        <div className="flex items-center gap-3 mt-1.5 text-[10px]" style={{ color: 'var(--text-secondary)' }}>
+          <span className="flex items-center gap-1">
+            <Vote className="w-3 h-3" />
+            {voteCount}
+          </span>
+          <span className="flex items-center gap-1">
+            <TrendingUp className="w-3 h-3" />
+            {attendance > 0 ? `${attendance.toFixed(0)}%` : '—'}
+          </span>
         </div>
       </div>
 
-      {/* ChevronRight Icon */}
       <div
         className="flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200"
-        style={{
-          backgroundColor: isHovered ? 'rgba(255, 255, 255, 0.1)' : 'var(--glass-background)',
-        }}
+        style={{ backgroundColor: isHovered ? `${partyColor}15` : 'var(--glass-background)' }}
       >
         <ChevronRight
           className="w-4 h-4 transition-all duration-200"
-          style={{
-            color: isHovered ? partyColor : 'var(--text-tertiary)',
-          }}
+          style={{ color: isHovered ? partyColor : 'var(--text-tertiary)' }}
         />
       </div>
     </div>

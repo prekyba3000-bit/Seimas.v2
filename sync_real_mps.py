@@ -68,6 +68,17 @@ def parse_mps_from_xml(xml_content):
                     except ValueError:
                         pass
                 
+                # Extract party: prefer faction from Pareigos, fallback to iškėlusi_partija
+                party = 'Unknown'
+                for pareigos in mp_elem.findall('Pareigos'):
+                    pad = pareigos.get('padalinio_pavadinimas', '')
+                    role = pareigos.get('pareigos', '')
+                    if 'frakcij' in pad.lower() or 'frakcij' in role.lower():
+                        party = pad
+                        break
+                if party == 'Unknown':
+                    party = mp_elem.get('iškėlusi_partija', '') or 'Unknown'
+
                 slug = unidecode.unidecode(f"{vardas} {pavarde}").lower().strip()
                 slug = re.sub(r"[^a-z0-9]+", "_", slug).strip("_")
                 photo_url = f"{PHOTO_BASE}/{slug}.jpg"
@@ -79,6 +90,7 @@ def parse_mps_from_xml(xml_content):
                     'is_active': is_active,
                     'data_nuo': data_nuo,
                     'data_iki': data_iki,
+                    'party': party,
                 })
             except Exception as e:
                 print(f"  Warning: Failed to parse MP record: {e}")
@@ -100,6 +112,7 @@ def update_politicians_in_db(mps):
             (
                 mp['photo_url'],
                 mp['is_active'],
+                mp.get('party', 'Unknown'),
                 int(mp['asmens_id'])
             )
             for mp in mps
@@ -108,7 +121,7 @@ def update_politicians_in_db(mps):
         if update_data:
             sql = """
             UPDATE politicians 
-            SET photo_url = %s, is_active = %s, last_synced_at = NOW()
+            SET photo_url = %s, is_active = %s, current_party = %s, last_synced_at = NOW()
             WHERE seimas_mp_id = %s
             """
             

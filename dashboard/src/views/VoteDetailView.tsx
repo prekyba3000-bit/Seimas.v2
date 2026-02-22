@@ -1,25 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ExternalLink, ThumbsUp, ThumbsDown, Minus, UserX, Search, PieChart, Calendar, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ArrowLeft, ExternalLink, ThumbsUp, ThumbsDown, Minus, UserX, Search, PieChart, Calendar, AlertTriangle, BarChart3 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { api, VoteDetail } from '../services/api';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { VoteBreakdown } from '../components/VoteBreakdown';
+import { getPartyColor, getPartyShort } from '../utils/partyColors';
+import { cn } from '../components/ui/utils';
 
 const getChoiceIcon = (choice: string) => {
     switch (choice.toLowerCase()) {
-        case 'už': return <ThumbsUp className="w-4 h-4" style={{ color: 'var(--status-success)' }} />;
-        case 'prieš': return <ThumbsDown className="w-4 h-4" style={{ color: 'var(--status-danger)' }} />;
-        case 'susilaikė': return <Minus className="w-4 h-4" style={{ color: 'var(--status-warning)' }} />;
+        case 'už': return <ThumbsUp className="w-4 h-4 text-green-500" />;
+        case 'prieš': return <ThumbsDown className="w-4 h-4 text-red-500" />;
+        case 'susilaikė': return <Minus className="w-4 h-4 text-amber-500" />;
         default: return <UserX className="w-4 h-4 text-gray-500" />;
     }
 };
 
-const getChoiceColor = (choice: string): React.CSSProperties => {
+const getChoiceBg = (choice: string) => {
     switch (choice.toLowerCase()) {
-        case 'už': return { backgroundColor: 'var(--status-success)' };
-        case 'prieš': return { backgroundColor: 'var(--status-danger)' };
-        case 'susilaikė': return { backgroundColor: 'var(--status-warning)' };
-        default: return { backgroundColor: 'var(--color-text-ghost, #666666)' };
+        case 'už': return 'bg-green-500';
+        case 'prieš': return 'bg-red-500';
+        case 'susilaikė': return 'bg-amber-500';
+        default: return 'bg-gray-500';
     }
 };
 
@@ -28,176 +31,220 @@ const VoteDetailView = ({ voteId }: { voteId: string }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState('');
+    const [filterChoice, setFilterChoice] = useState<string | null>(null);
 
     useEffect(() => {
         setLoading(true);
         setError(null);
         api.getVote(voteId)
-            .then(data => setVote(data))
+            .then(setVote)
             .catch(err => {
                 console.error('Failed to load vote details', err);
-                setError('Failed to load vote details. Please try again.');
+                setError('Nepavyko užkrauti balsavimo duomenų.');
             })
             .finally(() => setLoading(false));
     }, [voteId]);
 
-    if (loading) return (
-        <Card className="p-20 flex flex-col items-center justify-center">
-            <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full mb-4" />
-            Loading vote details...
-        </Card>
-    );
+    const filteredVotes = useMemo(() => {
+        if (!vote) return [];
+        return vote.votes.filter(v => {
+            const matchSearch = v.name.toLowerCase().includes(search.toLowerCase()) || v.party.toLowerCase().includes(search.toLowerCase());
+            const matchChoice = !filterChoice || v.choice === filterChoice;
+            return matchSearch && matchChoice;
+        });
+    }, [vote, search, filterChoice]);
 
-    if (error) return (
-        <div className="max-w-4xl mx-auto space-y-4">
-            <Button variant="ghost" className="pl-0 gap-2 text-gray-400 hover:text-white" onClick={() => window.location.hash = '#/votes'}>
-                <ArrowLeft className="w-4 h-4" />
-                Back to Votes
-            </Button>
-            <div className="p-4 border border-red-500/30 bg-red-500/10 rounded-xl flex items-center gap-3 text-red-400">
-                <AlertTriangle className="w-5 h-5 shrink-0" />
-                {error}
+    const partyBreakdown = useMemo(() => {
+        if (!vote?.party_stats) return [];
+        return Object.entries(vote.party_stats)
+            .map(([party, stats]) => ({
+                party,
+                short: getPartyShort(party),
+                color: getPartyColor(party),
+                ...stats,
+                total: Object.values(stats).reduce((a, b) => a + b, 0),
+            }))
+            .sort((a, b) => b.total - a.total);
+    }, [vote]);
+
+    if (loading) {
+        return (
+            <Card className="p-20 flex flex-col items-center justify-center text-muted-foreground">
+                <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mb-4" />
+                Kraunami duomenys...
+            </Card>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="max-w-4xl mx-auto space-y-4">
+                <Button variant="ghost" className="pl-0 gap-2 text-muted-foreground hover:text-foreground" onClick={() => window.location.hash = '#/dashboard/votes'}>
+                    <ArrowLeft className="w-4 h-4" /> Grįžti
+                </Button>
+                <div className="p-4 border border-destructive/30 bg-destructive/10 rounded-xl flex items-center gap-3 text-destructive">
+                    <AlertTriangle className="w-5 h-5 shrink-0" /> {error}
+                </div>
             </div>
-        </div>
-    );
+        );
+    }
 
-    if (!vote) return (
-        <Card className="p-20 text-center text-gray-400">Vote not found</Card>
-    );
-
-    const filteredVotes = vote.votes.filter(v =>
-        v.name.toLowerCase().includes(search.toLowerCase()) ||
-        v.party.toLowerCase().includes(search.toLowerCase())
-    );
+    if (!vote) {
+        return <Card className="p-20 text-center text-muted-foreground">Balsavimas nerastas</Card>;
+    }
 
     const totalVotes = Object.values(vote.stats).reduce((a, b) => a + b, 0);
+    const breakdownStats = {
+        for: vote.stats['Už'] ?? 0,
+        against: vote.stats['Prieš'] ?? 0,
+        abstain: vote.stats['Susilaikė'] ?? 0,
+    };
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="max-w-4xl mx-auto space-y-6"
-        >
-            <Button variant="ghost" className="pl-0 gap-2 text-gray-400 hover:text-white" onClick={() => window.location.hash = '#/votes'}>
-                <ArrowLeft className="w-4 h-4" />
-                Back to Votes
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-5xl mx-auto space-y-6">
+            <Button variant="ghost" className="pl-0 gap-2 text-muted-foreground hover:text-foreground" onClick={() => window.location.hash = '#/dashboard/votes'}>
+                <ArrowLeft className="w-4 h-4" /> Grįžti
             </Button>
 
             {/* Header */}
-            <Card className="p-8">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-6">
-                    <h1 className="text-2xl font-bold text-white leading-tight">{vote.title}</h1>
+            <Card className="p-6">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+                    <h1 className="text-xl font-bold leading-tight">{vote.title}</h1>
                     {vote.url && (
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            icon={ExternalLink}
-                            onClick={() => window.open(vote.url!, '_blank')}
-                        >
-                            Source
+                        <Button variant="secondary" size="sm" icon={ExternalLink} onClick={() => window.open(vote.url!, '_blank')}>
+                            Šaltinis
                         </Button>
                     )}
                 </div>
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 mb-6">
-                    <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5">
-                        <Calendar className="w-4 h-4" />
-                        {vote.date}
+                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted">
+                        <Calendar className="w-4 h-4" /> {vote.date}
                     </span>
                     {vote.result_type && (
-                        <span className="px-3 py-1 rounded-full font-medium" style={{ backgroundColor: vote.result_type.toLowerCase().includes('priimta') ? 'var(--status-success-muted, rgba(34, 197, 94, 0.1))' : 'rgba(239, 68, 68, 0.1)', color: vote.result_type.toLowerCase().includes('priimta') ? 'var(--status-success)' : 'var(--status-danger)' }}>
+                        <span className={cn(
+                            'px-3 py-1 rounded-full font-bold text-xs',
+                            vote.result_type.toLowerCase().includes('priimta')
+                                ? 'bg-green-500/10 text-green-500'
+                                : 'bg-red-500/10 text-red-500',
+                        )}>
                             {vote.result_type}
                         </span>
                     )}
-                    <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5">
-                        <PieChart className="w-4 h-4" />
-                        {totalVotes} votes cast
+                    <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted">
+                        <PieChart className="w-4 h-4" /> {totalVotes} balsų
                     </span>
                 </div>
                 {vote.description && (
-                    <p className="text-gray-300 text-sm leading-relaxed border-t border-white/10 pt-6">
-                        {vote.description}
-                    </p>
+                    <p className="text-muted-foreground text-sm leading-relaxed border-t border-border pt-4 mt-4">{vote.description}</p>
                 )}
             </Card>
 
-            {/* Stats Bar */}
-            <Card className="p-8">
-                <h3 className="text-sm uppercase tracking-wider text-gray-500 font-semibold mb-6">Voting Breakdown</h3>
+            {/* Vote Breakdown (Figma component) */}
+            <VoteBreakdown stats={breakdownStats} totalVotes={totalVotes} />
 
-                <div className="flex h-12 rounded-xl overflow-hidden bg-gray-900 shadow-inner mb-6 relative">
-                    {Object.entries(vote.stats).map(([choice, count]) => {
-                        const width = (count / totalVotes) * 100;
-                        if (width === 0) return null;
-                        return (
-                            <div
-                                key={choice}
-                                className="h-full transition-all duration-1000 relative group flex items-center justify-center"
-                                style={{ width: `${width}%`, ...getChoiceColor(choice) }}
-                                title={`${choice}: ${count}`}
-                            >
-                                {width > 10 && <span className="text-xs font-bold text-black/50 drop-shadow-sm">{Math.round(width)}%</span>}
-                            </div>
-                        );
-                    })}
-                </div>
+            {/* Party Breakdown */}
+            {partyBreakdown.length > 0 && (
+                <Card className="p-6">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4" />
+                        Balsavimas pagal frakciją
+                    </h3>
+                    <div className="space-y-3">
+                        {partyBreakdown.map(p => {
+                            const forPct = p.total > 0 ? ((p['Už'] ?? 0) / p.total) * 100 : 0;
+                            const againstPct = p.total > 0 ? ((p['Prieš'] ?? 0) / p.total) * 100 : 0;
+                            const abstainPct = p.total > 0 ? ((p['Susilaikė'] ?? 0) / p.total) * 100 : 0;
 
-                <div className="flex flex-wrap gap-6 justify-center">
-                    {Object.entries(vote.stats).map(([choice, count]) => (
-                        <div key={choice} className="flex items-center gap-3 text-sm p-3 rounded-lg bg-white/5 border border-white/5 min-w-[120px]">
-                            <div className="w-3 h-3 rounded-full shadow-[0_0_10px_currentColor]" style={getChoiceColor(choice)} />
-                            <span className="text-gray-400 capitalize">{choice}</span>
-                            <span className="font-bold text-white ml-auto">{count}</span>
-                        </div>
-                    ))}
-                </div>
-            </Card>
+                            return (
+                                <div key={p.party} className="flex items-center gap-3">
+                                    <div className="w-16 text-right">
+                                        <span
+                                            className="text-[10px] font-bold px-1.5 py-0.5 rounded text-white"
+                                            style={{ backgroundColor: p.color }}
+                                        >
+                                            {p.short}
+                                        </span>
+                                    </div>
+                                    <div className="flex-1 flex h-5 rounded-full overflow-hidden bg-muted">
+                                        {forPct > 0 && <div className="h-full bg-green-500" style={{ width: `${forPct}%` }} />}
+                                        {againstPct > 0 && <div className="h-full bg-red-500" style={{ width: `${againstPct}%` }} />}
+                                        {abstainPct > 0 && <div className="h-full bg-amber-500" style={{ width: `${abstainPct}%` }} />}
+                                    </div>
+                                    <div className="text-[10px] text-muted-foreground w-8 text-right">{p.total}</div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </Card>
+            )}
 
             {/* Individual Votes */}
             <Card className="p-0 overflow-hidden">
-                <div className="flex flex-col md:flex-row items-center justify-between p-6 border-b border-white/5 gap-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                        <UserX className="w-5 h-5 text-blue-400" />
-                        Individual Votes
+                <div className="flex flex-col md:flex-row items-center justify-between p-5 border-b border-border gap-3">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                        <UserX className="w-4 h-4 text-primary" />
+                        Individualūs balsai
                     </h3>
-                    <div className="relative w-full md:w-64 group">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-blue-500 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Search MP or party..."
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            className="w-full bg-black/20 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
-                        />
+                    <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                            {['Už', 'Prieš', 'Susilaikė'].map(choice => (
+                                <button
+                                    key={choice}
+                                    onClick={() => setFilterChoice(filterChoice === choice ? null : choice)}
+                                    className={cn(
+                                        'px-2 py-1 text-[10px] font-bold rounded transition-all',
+                                        filterChoice === choice
+                                            ? `${getChoiceBg(choice)} text-white`
+                                            : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                                    )}
+                                >
+                                    {choice}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="relative w-48">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                            <input
+                                type="text"
+                                placeholder="Ieškoti..."
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                className="w-full bg-muted border-none rounded-lg pl-8 pr-3 py-1.5 text-xs focus:ring-1 focus:ring-primary outline-none"
+                            />
+                        </div>
                     </div>
                 </div>
 
-                <div className="divide-y divide-white/5 max-h-[600px] overflow-y-auto overflow-x-auto custom-scrollbar">
+                <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
                     {filteredVotes.map((v, i) => (
-                        <div key={i} className="py-3 px-6 flex items-center justify-between hover:bg-white/5 transition-colors group">
+                        <div key={i} className="py-2.5 px-5 flex items-center justify-between hover:bg-muted/20 transition-colors group">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-500 group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                                <div
+                                    className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                                    style={{ backgroundColor: getPartyColor(v.party) }}
+                                >
                                     {v.name.charAt(0)}
                                 </div>
                                 <div>
-                                    <div className="font-medium text-white group-hover:text-blue-400 transition-colors">{v.name}</div>
-                                    <div className="text-xs text-gray-500">{v.party}</div>
+                                    <div className="font-medium text-sm group-hover:text-primary transition-colors">{v.name}</div>
+                                    <div className="text-[10px] text-muted-foreground">{getPartyShort(v.party)}</div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/5 w-32 justify-center">
+                            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted border border-border text-xs font-medium w-28 justify-center">
                                 {getChoiceIcon(v.choice)}
-                                <span className="text-sm font-medium">{v.choice}</span>
+                                <span>{v.choice}</span>
                             </div>
                         </div>
                     ))}
                     {filteredVotes.length === 0 && (
-                        <div className="text-center py-12 text-gray-500 flex flex-col items-center">
+                        <div className="text-center py-12 text-muted-foreground flex flex-col items-center">
                             <Search className="w-8 h-8 opacity-20 mb-2" />
-                            No matches found
+                            Nieko nerasta
                         </div>
                     )}
                 </div>
-                <div className="p-2 border-t border-white/5 bg-white/[0.02] text-center text-xs text-gray-500">
-                    Showing {filteredVotes.length} records
+                <div className="p-2 border-t border-border bg-muted/20 text-center text-[10px] text-muted-foreground">
+                    Rodoma {filteredVotes.length} įrašų
                 </div>
             </Card>
         </motion.div>

@@ -81,7 +81,7 @@ const VotesListView = () => {
     );
 
     const handleVoteClick = (id: string) => {
-        window.location.href = `#/votes/${id}`;
+        window.location.href = `#/dashboard/votes/${id}`;
     };
 
     return (

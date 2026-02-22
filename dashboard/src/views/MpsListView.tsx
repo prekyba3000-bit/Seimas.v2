@@ -36,7 +36,7 @@ const MpsListView = () => {
     }, [mps, search, partyFilter, sortBy]);
 
     const handleMpClick = (mpId: string) => {
-        window.location.href = `#/mps/${mpId}`;
+        window.location.href = `#/dashboard/mps/${mpId}`;
     };
 
     return (

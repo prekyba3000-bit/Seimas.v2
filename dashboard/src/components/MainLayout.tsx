@@ -7,7 +7,7 @@ import {
   FileText, 
   Calendar, 
   Scale, 
-  Settings,
+  Shield,
   Menu,
   Bell,
   Search,
@@ -25,6 +25,7 @@ export function MainLayout() {
     { path: '/dashboard', label: 'Apžvalga', icon: LayoutDashboard }, 
     { path: '/dashboard/mps', label: 'Seimo Nariai', icon: Users }, 
     { path: '/dashboard/votes', label: 'Balsavimai', icon: FileText }, 
+    { path: '/dashboard/factions', label: 'Frakcijos', icon: Shield }, 
     { path: '/dashboard/sessions', label: 'Sesijos', icon: Calendar }, 
     { path: '/dashboard/compare', label: 'Palyginimas', icon: Scale }, 
   ];
