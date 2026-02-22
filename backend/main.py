@@ -88,6 +88,7 @@ ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:3000",
     "https://dashboard-tawny-tau-42.vercel.app",
+    "https://seimas-v2.vercel.app",
 ]
 
 app.add_middleware(
