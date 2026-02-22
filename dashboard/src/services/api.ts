@@ -76,6 +76,28 @@ export interface ComparisonResult {
   }[];
 }
 
+export interface AccountabilityPerson {
+  id: string;
+  name: string;
+  party: string | null;
+  photo_url: string | null;
+  attendance: number;
+  vote_count: number;
+  risk_score: number;
+  integrity_score: number;
+  risk_signals_7d: { high: number; medium: number; low: number };
+  hero_evidence: string[];
+  watch_evidence: string[];
+  rank: number;
+}
+
+export interface HeroesVillainsResponse {
+  generated_at: string;
+  window_days: number;
+  heroes: AccountabilityPerson[];
+  watchlist: AccountabilityPerson[];
+}
+
 // ── Request helper ───────────────────────────────────────────────────────────
 
 class ApiError extends Error {
@@ -120,4 +142,7 @@ export const api = {
 
   compareMps: (ids: string[]) =>
     request<ComparisonResult>(`/mps/compare?ids=${ids.join(",")}`),
+
+  getHeroesVillains: (limit = 10) =>
+    request<HeroesVillainsResponse>(`/accountability/heroes-villains?limit=${limit}`),
 };

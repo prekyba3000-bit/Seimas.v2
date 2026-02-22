@@ -117,6 +117,12 @@ def check_rate_limit(ip: str) -> bool:
     return True
 
 
+def _table_exists(cur, table_name: str) -> bool:
+    """Safe table existence check for optional pipeline tables."""
+    cur.execute("SELECT to_regclass(%s) AS reg", (f"public.{table_name}",))
+    return cur.fetchone()["reg"] is not None
+
+
 # Connection pool (lazy init)
 _pool = None
 
@@ -226,6 +232,7 @@ def get_mps():
                     p.current_party,
                     p.is_active,
                     p.photo_url,
+                    p.social_links,
                     COALESCE(s.total_votes_cast, 0) AS vote_count,
                     COALESCE(s.attendance_percentage, 0) AS attendance,
                     s.most_frequent_vote
@@ -242,6 +249,7 @@ def get_mps():
                     "party": row["current_party"],
                     "is_active": row["is_active"],
                     "photo_url": row["photo_url"],
+                    "social_links": row["social_links"] or {},
                     "vote_count": row["vote_count"],
                     "attendance": float(row["attendance"]),
                     "vote_mode": row["most_frequent_vote"]
@@ -361,7 +369,7 @@ def get_mp(mp_id: str):
 
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT p.id, p.display_name, p.current_party, p.photo_url,
+                SELECT p.id, p.display_name, p.current_party, p.photo_url, p.social_links,
                        p.is_active, p.seimas_mp_id,
                        COUNT(DISTINCT mv.vote_id) as vote_count
                 FROM politicians p
@@ -379,6 +387,7 @@ def get_mp(mp_id: str):
                 "name": row["display_name"],
                 "party": row["current_party"],
                 "photo": row["photo_url"],
+                "social_links": row["social_links"] or {},
                 "active": row["is_active"],
                 "seimas_id": row["seimas_mp_id"],
                 "vote_count": row["vote_count"],
@@ -493,6 +502,148 @@ def get_vote(vote_id: str):
                 "stats": stats,
                 "party_stats": party_stats,
                 "votes": mp_votes,
+            }
+
+
+@app.get("/api/accountability/heroes-villains")
+def get_heroes_villains(limit: int = 10):
+    """
+    Weekly accountability ranking.
+
+    Returns two lists:
+      - heroes: best integrity score
+      - watchlist: highest risk score
+    """
+    limit = max(1, min(limit, 25))
+
+    with get_db_conn() as conn:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            has_stats = _table_exists(cur, "mp_stats_summary")
+            has_alerts = _table_exists(cur, "conflict_alerts")
+
+            if has_stats:
+                cur.execute(
+                    """
+                    SELECT
+                        p.id::text AS id,
+                        p.display_name AS name,
+                        p.current_party AS party,
+                        p.photo_url,
+                        COALESCE(s.attendance_percentage, 0)::float AS attendance,
+                        COALESCE(s.total_votes_cast, 0)::int AS vote_count
+                    FROM politicians p
+                    LEFT JOIN mp_stats_summary s ON s.mp_id = p.id
+                    WHERE p.is_active = TRUE
+                    ORDER BY p.display_name
+                    """
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT
+                        p.id::text AS id,
+                        p.display_name AS name,
+                        p.current_party AS party,
+                        p.photo_url,
+                        0::float AS attendance,
+                        COALESCE(COUNT(DISTINCT mv.vote_id), 0)::int AS vote_count
+                    FROM politicians p
+                    LEFT JOIN mp_votes mv ON mv.politician_id = p.id
+                    WHERE p.is_active = TRUE
+                    GROUP BY p.id
+                    ORDER BY p.display_name
+                    """
+                )
+
+            rows = cur.fetchall()
+            if not rows:
+                return {"generated_at": datetime.datetime.utcnow().isoformat() + "Z", "window_days": 7, "heroes": [], "watchlist": []}
+
+            risk_map = defaultdict(lambda: {"high": 0, "medium": 0, "low": 0})
+            reasons_map = defaultdict(list)
+
+            if has_alerts:
+                cur.execute(
+                    """
+                    SELECT
+                        ca.mp_id::text AS mp_id,
+                        ca.severity,
+                        ca.alert_type,
+                        ca.description
+                    FROM conflict_alerts ca
+                    WHERE ca.detected_at >= (NOW() - INTERVAL '7 days')
+                      AND ca.mp_id IS NOT NULL
+                    ORDER BY ca.detected_at DESC
+                    """
+                )
+                alert_rows = cur.fetchall()
+                for a in alert_rows:
+                    mp_id = a["mp_id"]
+                    sev = (a["severity"] or "low").lower()
+                    if sev not in ("high", "medium", "low"):
+                        sev = "low"
+                    risk_map[mp_id][sev] += 1
+                    if len(reasons_map[mp_id]) < 5:
+                        label = (a["alert_type"] or "signal").replace("_", " ")
+                        reasons_map[mp_id].append(f"{sev.title()} risk: {label}")
+
+            scored = []
+            for r in rows:
+                mp_id = r["id"]
+                attendance = float(r.get("attendance") or 0.0)
+                vote_count = int(r.get("vote_count") or 0)
+
+                high = risk_map[mp_id]["high"]
+                medium = risk_map[mp_id]["medium"]
+                low = risk_map[mp_id]["low"]
+                risk_score = (high * 20) + (medium * 8) + (low * 3) + max(0, 70 - attendance) * 0.6
+                integrity_score = max(0, min(100, round(100 - risk_score + (attendance * 0.15), 1)))
+
+                hero_evidence = [
+                    f"Lankomumas: {attendance:.1f}%",
+                    f"Aktyvumas: {vote_count} balsavimų",
+                    f"7 d. signalai: H{high}/M{medium}/L{low}",
+                ]
+                watch_evidence = reasons_map[mp_id][:3]
+                if not watch_evidence:
+                    watch_evidence = [
+                        f"Lankomumas: {attendance:.1f}%",
+                        f"7 d. signalai: H{high}/M{medium}/L{low}",
+                        "Stebėsena pagal rizikos modelį",
+                    ]
+
+                scored.append(
+                    {
+                        "id": mp_id,
+                        "name": r["name"],
+                        "party": r.get("party"),
+                        "photo_url": r.get("photo_url"),
+                        "attendance": round(attendance, 1),
+                        "vote_count": vote_count,
+                        "risk_score": round(risk_score, 1),
+                        "integrity_score": integrity_score,
+                        "risk_signals_7d": {"high": high, "medium": medium, "low": low},
+                        "hero_evidence": hero_evidence,
+                        "watch_evidence": watch_evidence,
+                    }
+                )
+
+            heroes = sorted(scored, key=lambda x: (-x["integrity_score"], -x["attendance"], -x["vote_count"]))[:limit]
+            watchlist = sorted(scored, key=lambda x: (-x["risk_score"], x["attendance"], x["integrity_score"]))[:limit]
+
+            for idx, item in enumerate(heroes, start=1):
+                item["rank"] = idx
+            for idx, item in enumerate(watchlist, start=1):
+                item["rank"] = idx
+
+            return {
+                "generated_at": datetime.datetime.utcnow().isoformat() + "Z",
+                "window_days": 7,
+                "heroes": heroes,
+                "watchlist": watchlist,
             }
 
 
