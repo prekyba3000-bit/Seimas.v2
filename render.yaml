@@ -17,6 +17,8 @@ services:
         fromDatabase:
           name: seimas-db
           property: connectionString
+      - key: SYNC_SECRET
+        generateValue: true
       - key: PYTHON_VERSION
         value: "3.11"
     autoDeploy: true
