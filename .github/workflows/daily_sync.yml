@@ -36,6 +36,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Fix Photo URLs (one-time migration)
+        env:
+          DB_DSN: ${{ secrets.DB_DSN }}
+        run: python3 fix_photo_urls.py
+        continue-on-error: true
+
       - name: Sync MP Data
         env:
           DB_DSN: ${{ secrets.DB_DSN }}
