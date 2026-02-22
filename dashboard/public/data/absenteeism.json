@@ -1,87 +1,87 @@
 {
-  "title": "Wall of Shame - Lowest Participation MPs",
-  "description": "Bottom 10 active MPs by plenary voting participation (>20 votes, is_active)",
-  "generated_at": "2026-02-22T05:54:38.838461",
+  "title": "Gėdos siena — žemiausias dalyvavimas",
+  "description": "10 aktyviausiai praleistų posėdžių dienų narių (pagal faktinį dalyvavimą posėdžių dienomis)",
+  "generated_at": "2026-02-22T06:11:05.248685",
   "absentees": [
     {
       "rank": 1,
-      "name": "Jurgita Sejonienė",
-      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/jurgita_sejoniene.jpg",
-      "votes_cast": 2364,
-      "total_possible": 2509,
-      "participation_pct": 94.2
+      "name": "Rūta Miliūtė",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/ruta_miliute.jpg",
+      "days_present": 23,
+      "total_days": 56,
+      "participation_pct": 41.1
     },
     {
       "rank": 2,
-      "name": "Vytautas Juozapaitis",
-      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/vytautas_juozapaitis.jpg",
-      "votes_cast": 2493,
-      "total_possible": 2509,
-      "participation_pct": 99.4
+      "name": "Inga Ruginienė",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/inga_ruginiene.jpg",
+      "days_present": 25,
+      "total_days": 57,
+      "participation_pct": 43.9
     },
     {
       "rank": 3,
-      "name": "Rimas Jonas Jankūnas",
-      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/rimas_jonas_jankunas.jpg",
-      "votes_cast": 2493,
-      "total_possible": 2509,
-      "participation_pct": 99.4
+      "name": "Dovilė Šakalienė",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/dovile_sakaliene.jpg",
+      "days_present": 29,
+      "total_days": 57,
+      "participation_pct": 50.9
     },
     {
       "rank": 4,
-      "name": "Rūta Miliūtė",
-      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/ruta_miliute.jpg",
-      "votes_cast": 2493,
-      "total_possible": 2509,
-      "participation_pct": 99.4
+      "name": "Emanuelis Zingeris",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/emanuelis_zingeris.jpg",
+      "days_present": 31,
+      "total_days": 57,
+      "participation_pct": 54.4
     },
     {
       "rank": 5,
-      "name": "Paulius Visockas",
-      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/paulius_visockas.jpg",
-      "votes_cast": 2493,
-      "total_possible": 2509,
-      "participation_pct": 99.4
+      "name": "Arminas Lydeka",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/arminas_lydeka.jpg",
+      "days_present": 35,
+      "total_days": 57,
+      "participation_pct": 61.4
     },
     {
       "rank": 6,
-      "name": "Kazys Starkevičius",
-      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/kazys_starkevicius.jpg",
-      "votes_cast": 2509,
-      "total_possible": 2509,
-      "participation_pct": 100.0
+      "name": "Raminta Popovienė",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/raminta_popoviene.jpg",
+      "days_present": 37,
+      "total_days": 57,
+      "participation_pct": 64.9
     },
     {
       "rank": 7,
-      "name": "Viktorija Čmilytė-Nielsen",
-      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/viktorija_cmilyte_nielsen.jpg",
-      "votes_cast": 2509,
-      "total_possible": 2509,
-      "participation_pct": 100.0
+      "name": "Giedrimas Jeglinskas",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/giedrimas_jeglinskas.jpg",
+      "days_present": 37,
+      "total_days": 57,
+      "participation_pct": 64.9
     },
     {
       "rank": 8,
-      "name": "Vytautas Sinica",
-      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/vytautas_sinica.jpg",
-      "votes_cast": 2509,
-      "total_possible": 2509,
-      "participation_pct": 100.0
+      "name": "Lukas Savickas",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/lukas_savickas.jpg",
+      "days_present": 40,
+      "total_days": 57,
+      "participation_pct": 70.2
     },
     {
       "rank": 9,
-      "name": "Remigijus Žemaitaitis",
-      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/remigijus_zemaitaitis.jpg",
-      "votes_cast": 2509,
-      "total_possible": 2509,
-      "participation_pct": 100.0
+      "name": "Eugenijus Sabutis",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/eugenijus_sabutis.jpg",
+      "days_present": 40,
+      "total_days": 57,
+      "participation_pct": 70.2
     },
     {
       "rank": 10,
-      "name": "Martynas Katelynas",
-      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/martynas_katelynas.jpg",
-      "votes_cast": 2509,
-      "total_possible": 2509,
-      "participation_pct": 100.0
+      "name": "Česlav Olševski",
+      "photo_url": "https://www.lrs.lt/SIPIS/sn_foto/2024/ceslav_olsevski.jpg",
+      "days_present": 41,
+      "total_days": 57,
+      "participation_pct": 71.9
     }
   ]
 }
