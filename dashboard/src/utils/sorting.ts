@@ -7,6 +7,7 @@ export type SortOption =
   | "votes_asc";
 
 export interface MpData {
+  id: string;
   name: string;
   display_name?: string;
   vote_count?: number;

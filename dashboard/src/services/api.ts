@@ -1,144 +1,123 @@
-import {
-  MP,
-  Vote,
-  PlayerStats,
-  MatchResult,
-  RankedEntry,
-  ApiResponse,
-} from "../figma-types";
 import { API_URL as ConfigApiUrl } from "../config";
-import {
-  MOCK_MPS,
-  MOCK_STATS,
-  MOCK_VOTES,
-  MOCK_MATCH_RESULT,
-  MOCK_RANKED_LADDER,
-} from "./mocks";
 
 const API_BASE = `${import.meta.env.VITE_API_URL || ConfigApiUrl}/api`;
-const USE_MOCKS = false; // Flag to toggle mock data
 
-/**
- * Generic request wrapper for the API.
- * Handles JSON parsing and error throwing.
- */
-async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE}${endpoint}`;
-  const headers = {
-    "Content-Type": "application/json",
-    ...options?.headers,
-  };
+// ── Response types matching backend ──────────────────────────────────────────
 
-  try {
-    const response = await fetch(url, { ...options, headers });
+export interface DashboardStats {
+  total_mps: number;
+  historical_votes: string;
+  individual_votes: string;
+  accuracy: string;
+}
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
+export interface ActivityItem {
+  name: string;
+  action: string;
+  context: string;
+  time: string;
+}
 
-    const data = await response.json();
-    return data as T;
-  } catch (error) {
-    console.error(`Request failed for ${endpoint}:`, error);
-    throw error;
+export interface MpSummary {
+  id: string;
+  name: string;
+  normalized_name: string;
+  party: string;
+  is_active: boolean;
+  photo_url: string;
+  vote_count: number;
+  attendance: number;
+  vote_mode: string | null;
+}
+
+export interface MpDetail {
+  id: string;
+  name: string;
+  party: string;
+  photo: string;
+  active: boolean;
+  seimas_id: number | null;
+  vote_count: number;
+}
+
+export interface MpVoteRecord {
+  title: string;
+  date: string;
+  choice: string;
+}
+
+export interface VoteSummary {
+  id: string;
+  date: string;
+  title: string;
+  result: string | null;
+}
+
+export interface VoteDetail {
+  id: string;
+  date: string;
+  title: string;
+  description: string | null;
+  url: string | null;
+  result_type: string | null;
+  stats: Record<string, number>;
+  party_stats: Record<string, Record<string, number>>;
+  votes: { name: string; party: string; choice: string }[];
+}
+
+export interface ComparisonResult {
+  mps: { id: string; name: string; party: string; photo: string }[];
+  alignment_matrix: number[][];
+  divergent_votes: {
+    vote_id: string;
+    title: string;
+    date: string;
+    votes: Record<string, string>;
+  }[];
+}
+
+// ── Request helper ───────────────────────────────────────────────────────────
+
+class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
   }
 }
 
-/**
- * API Service Methods
- */
+async function request<T>(endpoint: string): Promise<T> {
+  const response = await fetch(`${API_BASE}${endpoint}`);
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => response.statusText);
+    throw new ApiError(response.status, detail);
+  }
+
+  return response.json();
+}
+
+// ── Public API ───────────────────────────────────────────────────────────────
+
 export const api = {
-  /**
-   * Fetches high-level dashboard statistics
-   * Endpoint: /stats
-   */
-  getDashboardStats: async (): Promise<{
-    active_legislation: number;
-    avg_attendance: number;
-    top_performer: MP;
-  }> => {
-    if (USE_MOCKS) {
-      await new Promise((r) => setTimeout(r, 600)); // Simulate network latency
-      return {
-        active_legislation: 12,
-        avg_attendance: 94.2,
-        top_performer: MOCK_MPS[0],
-      };
-    }
-    return request("/stats");
-  },
+  getStats: () => request<DashboardStats>("/stats"),
 
-  /**
-   * Fetches the Ranked Ladder (Leaderboard)
-   * Endpoint: /mps
-   */
-  getLeaderboard: async (): Promise<RankedEntry[]> => {
-    if (USE_MOCKS) {
-      await new Promise((r) => setTimeout(r, 800));
-      return MOCK_RANKED_LADDER;
-    }
-    const mps = await request<MP[]>("/mps");
-    // In a real scenario, the backend might return the ranked entry structure directly.
-    // If it returns just MPs, we might need to transform it here.
-    // Assuming backend returns RankedEntry[] for this specific call for now.
-    return mps as unknown as RankedEntry[];
-  },
+  getActivity: () => request<ActivityItem[]>("/activity"),
 
-  /**
-   * Fetches a specific MP's profile ("Champion Profile")
-   * Endpoint: /mps/{id}
-   */
-  getChampionProfile: async (
-    id: string,
-  ): Promise<{ mp: MP; stats: PlayerStats }> => {
-    if (USE_MOCKS) {
-      await new Promise((r) => setTimeout(r, 500));
-      const mp = MOCK_MPS.find((m) => m.id === id) || MOCK_MPS[0];
-      return { mp, stats: MOCK_STATS };
-    }
-    return request(`/mps/${id}`);
-  },
+  getMps: () => request<MpSummary[]>("/mps"),
 
-  /**
-   * Fetches the Match History (Votes)
-   * Endpoint: /votes
-   */
-  getMatchHistory: async (limit: number = 20): Promise<Vote[]> => {
-    if (USE_MOCKS) {
-      await new Promise((r) => setTimeout(r, 700));
-      return MOCK_VOTES.slice(0, limit);
-    }
-    return request(`/votes?limit=${limit}`);
-  },
+  getMp: (id: string) => request<MpDetail>(`/mps/${id}`),
 
-  /**
-   * Fetches comparison data between two MPs
-   * Endpoint: /mps/compare
-   */
-  getComparison: async (
-    idA: string,
-    idB: string,
-  ): Promise<{
-    mpA: { mp: MP; stats: PlayerStats };
-    mpB: { mp: MP; stats: PlayerStats };
-    common_votes: number;
-    agreement_rate: number;
-  }> => {
-    if (USE_MOCKS) {
-      await new Promise((r) => setTimeout(r, 1000));
-      const mpA = MOCK_MPS.find((m) => m.id === idA) || MOCK_MPS[0];
-      const mpB = MOCK_MPS.find((m) => m.id === idB) || MOCK_MPS[1];
+  getMpVotes: (id: string, limit = 20) =>
+    request<MpVoteRecord[]>(`/mps/${id}/votes?limit=${limit}`),
 
-      return {
-        mpA: { mp: mpA, stats: MOCK_STATS },
-        mpB: {
-          mp: mpB,
-          stats: { ...MOCK_STATS, attendance_rate: 85, kda_ratio: 10.5 },
-        },
-        common_votes: 142,
-        agreement_rate: 76,
-      };
-    }
-    return request(`/mps/compare?a=${idA}&b=${idB}`);
-  },
+  getVotes: (limit = 50, offset = 0) =>
+    request<VoteSummary[]>(`/votes?limit=${limit}&offset=${offset}`),
+
+  getVote: (id: string) => request<VoteDetail>(`/votes/${id}`),
+
+  compareMps: (ids: string[]) =>
+    request<ComparisonResult>(`/mps/compare?ids=${ids.join(",")}`),
 };

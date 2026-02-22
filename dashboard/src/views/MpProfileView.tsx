@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Building2, Vote, TrendingUp, Calendar, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Building2, Vote, TrendingUp, Calendar, ExternalLink, AlertTriangle } from 'lucide-react';
 import { motion } from 'motion/react';
-import { API_URL } from '../config';
+import { api, MpDetail, MpVoteRecord } from '../services/api';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 
-// Stat Card for profile
 const ProfileStat = ({ label, value, icon: Icon }: { label: string; value: string; icon: any }) => (
     <Card className="flex items-center gap-3 p-4">
         <div className="p-2 bg-blue-500/10 rounded-lg">
@@ -18,12 +17,10 @@ const ProfileStat = ({ label, value, icon: Icon }: { label: string; value: strin
     </Card>
 );
 
-// Vote Choice Badge
 const VoteBadge = ({ choice }: { choice: string }) => {
     const colors: Record<string, string> = {
         'Už': 'bg-green-500/10 text-green-400 border-green-500/20',
         'Prieš': 'bg-red-500/10 text-red-400 border-red-500/20',
-        // Neutralize yellow -> use neutral surface + primary text + border token
         'Susilaikė': 'bg-background text-primary border-border',
         'Nedalyvavo': 'bg-gray-500/10 text-gray-400 border-gray-500/20'
     };
@@ -35,19 +32,34 @@ const VoteBadge = ({ choice }: { choice: string }) => {
 };
 
 interface MpProfileLayoutProps {
-    mp: any;
-    votes: any[];
+    mp: MpDetail | null;
+    votes: MpVoteRecord[];
     loading?: boolean;
+    error?: string | null;
 }
 
-// Pure Presentational Component
-export const MpProfileLayout = ({ mp, votes, loading = false }: MpProfileLayoutProps) => {
+export const MpProfileLayout = ({ mp, votes, loading = false, error = null }: MpProfileLayoutProps) => {
     if (loading) {
         return (
             <Card className="p-12 text-center text-gray-400 flex flex-col items-center justify-center min-h-[400px]">
                 <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mb-4" />
                 Loading profile data...
             </Card>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col gap-4">
+                <Button variant="ghost" className="pl-0 gap-2 text-gray-400 hover:text-white self-start" onClick={() => window.location.hash = '#/mps'}>
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to MPs
+                </Button>
+                <div className="p-4 border border-red-500/30 bg-red-500/10 rounded-xl flex items-center gap-3 text-red-400">
+                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                    {error}
+                </div>
+            </div>
         );
     }
 
@@ -66,7 +78,6 @@ export const MpProfileLayout = ({ mp, votes, loading = false }: MpProfileLayoutP
             animate={{ opacity: 1 }}
             className="flex flex-col gap-8"
         >
-            {/* Back Button */}
             <div>
                 <Button variant="ghost" className="pl-0 gap-2 text-gray-400 hover:text-white" onClick={() => window.location.hash = '#/mps'}>
                     <ArrowLeft className="w-4 h-4" />
@@ -74,7 +85,6 @@ export const MpProfileLayout = ({ mp, votes, loading = false }: MpProfileLayoutP
                 </Button>
             </div>
 
-            {/* Profile Header */}
             <Card className="p-8 flex flex-col md:flex-row items-center md:items-start gap-8">
                 <div className="relative group">
                     <img
@@ -114,15 +124,13 @@ export const MpProfileLayout = ({ mp, votes, loading = false }: MpProfileLayoutP
                 </div>
             </Card>
 
-            {/* Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <ProfileStat label="Total Votes" value={mp.vote_count?.toString() || '—'} icon={Vote} />
-                <ProfileStat label="Attendance" value={mp.attendance ? `${mp.attendance}%` : '—'} icon={TrendingUp} />
-                <ProfileStat label="Party Loyalty" value={mp.loyalty ? `${mp.loyalty}%` : '—'} icon={Building2} />
-                <ProfileStat label="Term Start" value={mp.term_start || '—'} icon={Calendar} />
+                <ProfileStat label="Attendance" value="—" icon={TrendingUp} />
+                <ProfileStat label="Party" value={mp.party || '—'} icon={Building2} />
+                <ProfileStat label="Status" value={mp.active ? 'Active' : 'Inactive'} icon={Calendar} />
             </div>
 
-            {/* Recent Votes */}
             <Card className="p-0 overflow-hidden">
                 <div className="p-6 border-b border-white/5">
                     <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -133,7 +141,7 @@ export const MpProfileLayout = ({ mp, votes, loading = false }: MpProfileLayoutP
 
                 {votes.length > 0 ? (
                     <div className="divide-y divide-white/5">
-                        {votes.slice(0, 10).map((vote: any, i: number) => (
+                        {votes.slice(0, 10).map((vote, i) => (
                             <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-white/5 transition-colors gap-3">
                                 <div className="flex-1 min-w-0">
                                     <div className="text-sm font-medium truncate pr-4 text-gray-200">{vote.title}</div>
@@ -158,7 +166,6 @@ export const MpProfileLayout = ({ mp, votes, loading = false }: MpProfileLayoutP
                 )}
             </Card>
 
-            {/* Compare CTA */}
             <Card className="p-8 text-center bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
                 <h3 className="text-xl font-bold mb-2">Compare Performance</h3>
                 <p className="text-gray-400 text-sm mb-6 max-w-lg mx-auto">
@@ -172,33 +179,30 @@ export const MpProfileLayout = ({ mp, votes, loading = false }: MpProfileLayoutP
     );
 };
 
-// Container Component (Data Fetching)
 const MpProfileView = ({ mpId }: { mpId: string }) => {
-    const [mp, setMp] = useState<any>(null);
-    const [votes, setVotes] = useState<any[]>([]);
+    const [mp, setMp] = useState<MpDetail | null>(null);
+    const [votes, setVotes] = useState<MpVoteRecord[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!mpId) return;
 
-        // eslint-disable-next-line
         setLoading(true);
-        Promise.all([
-            fetch(`${API_URL}/api/mps/${mpId}`).then(r => r.ok ? r.json() : null),
-            fetch(`${API_URL}/api/mps/${mpId}/votes`).then(r => r.ok ? r.json() : [])
-        ])
+        setError(null);
+        Promise.all([api.getMp(mpId), api.getMpVotes(mpId)])
             .then(([mpData, votesData]) => {
                 setMp(mpData);
                 setVotes(votesData);
-                setLoading(false);
             })
             .catch(err => {
                 console.error('Failed to load MP', err);
-                setLoading(false);
-            });
+                setError('Failed to load MP profile. Please try again.');
+            })
+            .finally(() => setLoading(false));
     }, [mpId]);
 
-    return <MpProfileLayout mp={mp} votes={votes} loading={loading} />;
+    return <MpProfileLayout mp={mp} votes={votes} loading={loading} error={error} />;
 };
 
 export default MpProfileView;

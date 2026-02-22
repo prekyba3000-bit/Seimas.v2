@@ -1,25 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ExternalLink, ThumbsUp, ThumbsDown, Circle, Minus, UserX, Search, PieChart, Calendar } from 'lucide-react';
+import { ArrowLeft, ExternalLink, ThumbsUp, ThumbsDown, Minus, UserX, Search, PieChart, Calendar, AlertTriangle } from 'lucide-react';
 import { motion } from 'motion/react';
-import { API_URL } from '../config';
+import { api, VoteDetail } from '../services/api';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-
-interface VoteDetail {
-    id: string;
-    date: string;
-    title: string;
-    description: string;
-    url: string;
-    result_type: string;
-    stats: Record<string, number>;
-    party_stats: Record<string, Record<string, number>>;
-    votes: {
-        name: string;
-        party: string;
-        choice: string;
-    }[];
-}
 
 const getChoiceIcon = (choice: string) => {
     switch (choice.toLowerCase()) {
@@ -42,19 +26,19 @@ const getChoiceColor = (choice: string): React.CSSProperties => {
 const VoteDetailView = ({ voteId }: { voteId: string }) => {
     const [vote, setVote] = useState<VoteDetail | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState('');
 
     useEffect(() => {
-        fetch(`${API_URL}/api/votes/${voteId}`)
-            .then(res => res.json())
-            .then(data => {
-                setVote(data);
-                setLoading(false);
-            })
+        setLoading(true);
+        setError(null);
+        api.getVote(voteId)
+            .then(data => setVote(data))
             .catch(err => {
                 console.error('Failed to load vote details', err);
-                setLoading(false);
-            });
+                setError('Failed to load vote details. Please try again.');
+            })
+            .finally(() => setLoading(false));
     }, [voteId]);
 
     if (loading) return (
@@ -62,6 +46,19 @@ const VoteDetailView = ({ voteId }: { voteId: string }) => {
             <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full mb-4" />
             Loading vote details...
         </Card>
+    );
+
+    if (error) return (
+        <div className="max-w-4xl mx-auto space-y-4">
+            <Button variant="ghost" className="pl-0 gap-2 text-gray-400 hover:text-white" onClick={() => window.location.hash = '#/votes'}>
+                <ArrowLeft className="w-4 h-4" />
+                Back to Votes
+            </Button>
+            <div className="p-4 border border-red-500/30 bg-red-500/10 rounded-xl flex items-center gap-3 text-red-400">
+                <AlertTriangle className="w-5 h-5 shrink-0" />
+                {error}
+            </div>
+        </div>
     );
 
     if (!vote) return (
@@ -90,23 +87,27 @@ const VoteDetailView = ({ voteId }: { voteId: string }) => {
             <Card className="p-8">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-6">
                     <h1 className="text-2xl font-bold text-white leading-tight">{vote.title}</h1>
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        icon={ExternalLink}
-                        onClick={() => window.open(vote.url, '_blank')}
-                    >
-                        Source
-                    </Button>
+                    {vote.url && (
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            icon={ExternalLink}
+                            onClick={() => window.open(vote.url!, '_blank')}
+                        >
+                            Source
+                        </Button>
+                    )}
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400 mb-6">
                     <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5">
                         <Calendar className="w-4 h-4" />
                         {vote.date}
                     </span>
-                    <span className="px-3 py-1 rounded-full font-medium" style={{ backgroundColor: vote.result_type.toLowerCase().includes('priimta') ? 'var(--status-success-muted, rgba(34, 197, 94, 0.1))' : 'rgba(239, 68, 68, 0.1)', color: vote.result_type.toLowerCase().includes('priimta') ? 'var(--status-success)' : 'var(--status-danger)' }}>
-                        {vote.result_type}
-                    </span>
+                    {vote.result_type && (
+                        <span className="px-3 py-1 rounded-full font-medium" style={{ backgroundColor: vote.result_type.toLowerCase().includes('priimta') ? 'var(--status-success-muted, rgba(34, 197, 94, 0.1))' : 'rgba(239, 68, 68, 0.1)', color: vote.result_type.toLowerCase().includes('priimta') ? 'var(--status-success)' : 'var(--status-danger)' }}>
+                            {vote.result_type}
+                        </span>
+                    )}
                     <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5">
                         <PieChart className="w-4 h-4" />
                         {totalVotes} votes cast
@@ -123,7 +124,6 @@ const VoteDetailView = ({ voteId }: { voteId: string }) => {
             <Card className="p-8">
                 <h3 className="text-sm uppercase tracking-wider text-gray-500 font-semibold mb-6">Voting Breakdown</h3>
 
-                {/* Visual Bar */}
                 <div className="flex h-12 rounded-xl overflow-hidden bg-gray-900 shadow-inner mb-6 relative">
                     {Object.entries(vote.stats).map(([choice, count]) => {
                         const width = (count / totalVotes) * 100;
@@ -141,7 +141,6 @@ const VoteDetailView = ({ voteId }: { voteId: string }) => {
                     })}
                 </div>
 
-                {/* Legend */}
                 <div className="flex flex-wrap gap-6 justify-center">
                     {Object.entries(vote.stats).map(([choice, count]) => (
                         <div key={choice} className="flex items-center gap-3 text-sm p-3 rounded-lg bg-white/5 border border-white/5 min-w-[120px]">

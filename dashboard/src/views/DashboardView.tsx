@@ -1,31 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Activity, Shield, Crosshair } from 'lucide-react';
+import { Users, Activity, Shield, Crosshair, AlertTriangle } from 'lucide-react';
 import { motion } from 'motion/react';
-import { API_URL } from '../config';
+import { api, DashboardStats, ActivityItem } from '../services/api';
 import { StatCard } from '../components/StatCard';
 import { Card } from '../components/Card';
 import { AbsenteeismCard } from '../components/AbsenteeismCard';
 
 export const DashboardView = () => {
-    const [stats, setStats] = useState({
-        total_mps: '...',
-        historical_votes: '...',
-        accuracy: '...',
-        active_rebels: '...'
-    });
-    const [activity, setActivity] = useState<any[]>([]);
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [activity, setActivity] = useState<ActivityItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch(`${API_URL}/api/stats`)
-            .then(res => res.json())
-            .then(data => setStats(data))
-            .catch(err => console.error("Stats fetch failed", err));
-
-        fetch(`${API_URL}/api/activity`)
-            .then(res => res.json())
-            .then(data => setActivity(data))
-            .catch(err => console.error("Activity fetch failed", err));
+        Promise.all([api.getStats(), api.getActivity()])
+            .then(([statsData, activityData]) => {
+                setStats(statsData);
+                setActivity(activityData);
+            })
+            .catch(err => {
+                console.error("Dashboard fetch failed", err);
+                setError("Failed to load dashboard data. The server may be waking up — try again in a moment.");
+            })
+            .finally(() => setLoading(false));
     }, []);
+
+    if (loading) {
+        return (
+            <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4" style={{ color: 'var(--text-secondary)' }}>
+                <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full" style={{ borderColor: 'var(--primary-500)', borderTopColor: 'transparent' }} />
+                Loading dashboard...
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-6 border rounded-xl flex items-center gap-3" style={{ borderColor: 'var(--status-danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--status-danger)' }}>
+                <AlertTriangle className="w-5 h-5 shrink-0" />
+                {error}
+            </div>
+        );
+    }
 
     return (
         <motion.div
@@ -35,10 +51,10 @@ export const DashboardView = () => {
         >
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="ASSETS" value={stats.total_mps} icon={Users} delay={0.1} />
-                <StatCard title="INTEL RECORDS" value={stats.historical_votes} icon={Activity} trend="12" delay={0.2} />
-                <StatCard title="ACCURACY" value={stats.accuracy} icon={Crosshair} delay={0.3} />
-                <StatCard title="REBELS" value={stats.active_rebels} icon={Shield} delay={0.4} />
+                <StatCard title="ASSETS" value={stats?.total_mps ?? '—'} icon={Users} delay={0.1} />
+                <StatCard title="INTEL RECORDS" value={stats?.historical_votes ?? '—'} icon={Activity} trend="12" delay={0.2} />
+                <StatCard title="ACCURACY" value={stats?.accuracy ?? '—'} icon={Crosshair} delay={0.3} />
+                <StatCard title="INDIVIDUAL VOTES" value={stats?.individual_votes ?? '—'} icon={Shield} delay={0.4} />
             </div>
 
             {/* Main Content */}
@@ -69,7 +85,7 @@ export const DashboardView = () => {
                                 <span className="text-xs text-primary bg-surface/10 px-2 py-1 rounded-sm border border-border font-terminal">{item.time}</span>
                             </motion.div>
                         )) : (
-                            <p className="text-ghost text-sm py-4 text-center font-terminal uppercase tracking-widest">Loading intel...</p>
+                            <p className="text-ghost text-sm py-4 text-center font-terminal uppercase tracking-widest">No recent activity</p>
                         )}
                     </div>
                 </Card>

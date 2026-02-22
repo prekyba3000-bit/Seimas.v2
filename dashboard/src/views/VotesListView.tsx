@@ -1,23 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { FileText, Search, Calendar, CheckCircle, XCircle, AlertCircle, ChevronRight, Filter } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { FileText, Search, Calendar, CheckCircle, XCircle, AlertCircle, ChevronRight, AlertTriangle } from 'lucide-react';
 import { motion } from 'motion/react';
-import { API_URL } from '../config';
+import { api, VoteSummary } from '../services/api';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 
-export interface Vote {
-    id: string;
-    date: string;
-    title: string;
-    result: string;
-}
+const PAGE_SIZE = 50;
 
-export const VoteCard = ({ vote, onClick }: { vote: Vote; onClick: () => void }) => {
-    const getResultIcon = (result: string) => {
+export const VoteCard = ({ vote, onClick }: { vote: VoteSummary; onClick: () => void }) => {
+    const getResultIcon = (result: string | null) => {
+        if (!result) return <AlertCircle className="w-5 h-5 text-primary" />;
         const r = result.toLowerCase();
         if (r.includes('priimta') || r.includes('pritarta')) return <CheckCircle className="w-5 h-5 text-green-500" />;
         if (r.includes('nepriimta') || r.includes('atmesta')) return <XCircle className="w-5 h-5 text-red-500" />;
-        // Replace yellow alert icon with neutral primary color
         return <AlertCircle className="w-5 h-5 text-primary" />;
     };
 
@@ -33,10 +28,14 @@ export const VoteCard = ({ vote, onClick }: { vote: Vote; onClick: () => void })
                     <div className="flex items-center gap-2 text-xs text-gray-400 mb-1.5">
                         <Calendar className="w-3 h-3" />
                         {vote.date}
-                        <span className="w-1 h-1 rounded-full bg-gray-700" />
-                        <span className="uppercase tracking-wider text-[10px] font-semibold text-gray-500">
-                            {vote.result}
-                        </span>
+                        {vote.result && (
+                            <>
+                                <span className="w-1 h-1 rounded-full bg-gray-700" />
+                                <span className="uppercase tracking-wider text-[10px] font-semibold text-gray-500">
+                                    {vote.result}
+                                </span>
+                            </>
+                        )}
                     </div>
                     <h3 className="font-medium text-white group-hover:text-blue-400 transition-colors line-clamp-2 leading-relaxed">
                         {vote.title}
@@ -49,29 +48,39 @@ export const VoteCard = ({ vote, onClick }: { vote: Vote; onClick: () => void })
 };
 
 const VotesListView = () => {
-    const [votes, setVotes] = useState<Vote[]>([]);
+    const [votes, setVotes] = useState<VoteSummary[]>([]);
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [hasMore, setHasMore] = useState(true);
 
-    useEffect(() => {
-        fetch(`${API_URL}/api/votes?limit=200`)
-            .then(res => res.json())
+    const loadVotes = useCallback((offset: number, append: boolean) => {
+        const setter = append ? setLoadingMore : setLoading;
+        setter(true);
+        setError(null);
+
+        api.getVotes(PAGE_SIZE, offset)
             .then(data => {
-                setVotes(data);
-                setLoading(false);
+                setVotes(prev => append ? [...prev, ...data] : data);
+                setHasMore(data.length === PAGE_SIZE);
             })
             .catch(err => {
                 console.error('Failed to load votes', err);
-                setLoading(false);
-            });
+                setError('Failed to load voting records. Please try again.');
+            })
+            .finally(() => setter(false));
     }, []);
+
+    useEffect(() => { loadVotes(0, false); }, [loadVotes]);
+
+    const loadMore = () => { loadVotes(votes.length, true); };
 
     const filtered = votes.filter(v =>
         v.title.toLowerCase().includes(search.toLowerCase())
     );
 
     const handleVoteClick = (id: string) => {
-        // eslint-disable-next-line
         window.location.href = `#/votes/${id}`;
     };
 
@@ -109,6 +118,14 @@ const VotesListView = () => {
                 />
             </div>
 
+            {/* Error State */}
+            {error && (
+                <div className="p-4 border border-red-500/30 bg-red-500/10 rounded-xl flex items-center gap-3 text-red-400">
+                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                    {error}
+                </div>
+            )}
+
             {/* List */}
             {loading ? (
                 <Card className="p-20 text-center text-gray-400 flex flex-col items-center">
@@ -120,11 +137,24 @@ const VotesListView = () => {
                     {filtered.map(vote => (
                         <VoteCard key={vote.id} vote={vote} onClick={() => handleVoteClick(vote.id)} />
                     ))}
-                    {filtered.length === 0 && (
+                    {filtered.length === 0 && !error && (
                         <div className="text-center py-20 text-gray-500 flex flex-col items-center gap-4">
                             <Search className="w-12 h-12 opacity-20" />
                             <p>No votes found matching "{search}"</p>
                             <Button variant="ghost" onClick={() => setSearch('')}>Clear Search</Button>
+                        </div>
+                    )}
+
+                    {/* Load More */}
+                    {hasMore && !search && filtered.length > 0 && (
+                        <div className="text-center pt-4">
+                            <Button
+                                variant="secondary"
+                                onClick={loadMore}
+                                disabled={loadingMore}
+                            >
+                                {loadingMore ? 'Loading...' : 'Load More Votes'}
+                            </Button>
                         </div>
                     )}
                 </div>

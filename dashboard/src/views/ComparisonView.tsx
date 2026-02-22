@@ -1,21 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Users, GitCompare, TrendingUp, AlertTriangle, ArrowRight, Check } from 'lucide-react';
+import { Users, GitCompare, TrendingUp, AlertTriangle, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { API_URL } from '../config';
+import { api, MpSummary } from '../services/api';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 
-// MP Selector Combobox
-const MpSelector = ({ mps, selected, onSelect, placeholder }: any) => {
+const MpSelector = ({ mps, selected, onSelect, placeholder }: {
+    mps: MpSummary[];
+    selected: string | null;
+    onSelect: (id: string) => void;
+    placeholder: string;
+}) => {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
 
-    const filtered = mps.filter((mp: any) =>
+    const filtered = mps.filter((mp) =>
         mp.name.toLowerCase().includes(search.toLowerCase()) ||
         mp.party?.toLowerCase().includes(search.toLowerCase())
     );
 
-    const selectedMp = mps.find((m: any) => m.id === selected);
+    const selectedMp = mps.find((m) => m.id === selected);
 
     return (
         <div className="relative">
@@ -28,7 +32,7 @@ const MpSelector = ({ mps, selected, onSelect, placeholder }: any) => {
             >
                 {selectedMp ? (
                     <>
-                        <img src={selectedMp.photo} alt="" className="w-10 h-10 rounded-full object-cover bg-gray-800 ring-2 ring-black/40" />
+                        <img src={selectedMp.photo_url} alt="" className="w-10 h-10 rounded-full object-cover bg-gray-800 ring-2 ring-black/40" />
                         <div className="flex flex-col flex-1">
                             <span className="text-sm font-bold text-white">{selectedMp.name}</span>
                             <span className="text-xs text-gray-400">{selectedMp.party}</span>
@@ -66,13 +70,13 @@ const MpSelector = ({ mps, selected, onSelect, placeholder }: any) => {
                                 />
                             </div>
 
-                            {filtered.map((mp: any) => (
+                            {filtered.map((mp) => (
                                 <div
                                     key={mp.id}
                                     onClick={() => { onSelect(mp.id); setOpen(false); setSearch(''); }}
                                     className="p-3 flex items-center gap-3 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5 last:border-0"
                                 >
-                                    <img src={mp.photo} alt="" className="w-8 h-8 rounded-full object-cover bg-gray-700" />
+                                    <img src={mp.photo_url} alt="" className="w-8 h-8 rounded-full object-cover bg-gray-700" />
                                     <div className="flex flex-col">
                                         <span className="text-sm font-medium text-gray-200">{mp.name}</span>
                                         <span className="text-xs text-gray-500">{mp.party}</span>
@@ -90,8 +94,7 @@ const MpSelector = ({ mps, selected, onSelect, placeholder }: any) => {
     );
 };
 
-// Alignment Score Display
-const AlignmentScore = ({ score, label }: any) => {
+const AlignmentScore = ({ score, label }: { score: number; label: string }) => {
     const percentage = Math.round(score * 100);
     const color = percentage >= 80 ? 'text-green-400' : percentage >= 50 ? 'text-secondary' : 'text-red-400';
     const ringColor = percentage >= 80 ? 'border-green-500' : percentage >= 50 ? 'border-border' : 'border-red-500';
@@ -107,45 +110,31 @@ const AlignmentScore = ({ score, label }: any) => {
     );
 };
 
-// Main Comparison View
 interface ComparisonViewProps {
     initialSelected?: (string | null)[];
 }
 
 const ComparisonView = ({ initialSelected = [null, null] }: ComparisonViewProps) => {
-    const [mps, setMps] = useState<any[]>([]);
+    const [mps, setMps] = useState<MpSummary[]>([]);
     const [selected, setSelected] = useState<(string | null)[]>(initialSelected);
     const [comparison, setComparison] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch MP list on mount
     useEffect(() => {
-        fetch(`${API_URL}/api/mps`)
-            .then(res => res.json())
+        api.getMps()
             .then(data => setMps(data))
             .catch(err => console.error('Failed to load MPs', err));
     }, []);
 
-    // Fetch comparison when both MPs selected
     useEffect(() => {
         if (selected[0] && selected[1] && selected[0] !== selected[1]) {
-            // eslint-disable-next-line
             setLoading(true);
             setError(null);
-            fetch(`${API_URL}/api/mps/compare?ids=${selected[0]},${selected[1]}`)
-                .then(res => {
-                    if (!res.ok) throw new Error('Comparison failed');
-                    return res.json();
-                })
-                .then(data => {
-                    setComparison(data);
-                    setLoading(false);
-                })
-                .catch(err => {
-                    setError(err.message);
-                    setLoading(false);
-                });
+            api.compareMps([selected[0], selected[1]])
+                .then(data => setComparison(data))
+                .catch(err => setError(err.message || 'Comparison failed'))
+                .finally(() => setLoading(false));
         } else {
             setComparison(null);
         }
@@ -179,7 +168,7 @@ const ComparisonView = ({ initialSelected = [null, null] }: ComparisonViewProps)
                 <MpSelector
                     mps={mps.filter(m => m.id !== selected[1])}
                     selected={selected[0]}
-                    onSelect={(v: string) => updateSelected(0, v)}
+                    onSelect={(v) => updateSelected(0, v)}
                     placeholder="Select first MP..."
                 />
 
@@ -190,7 +179,7 @@ const ComparisonView = ({ initialSelected = [null, null] }: ComparisonViewProps)
                 <MpSelector
                     mps={mps.filter(m => m.id !== selected[0])}
                     selected={selected[1]}
-                    onSelect={(v: string) => updateSelected(1, v)}
+                    onSelect={(v) => updateSelected(1, v)}
                     placeholder="Select second MP..."
                 />
             </div>
@@ -218,7 +207,6 @@ const ComparisonView = ({ initialSelected = [null, null] }: ComparisonViewProps)
                     animate={{ opacity: 1, y: 0 }}
                     className="flex flex-col gap-8"
                 >
-                    {/* Alignment Score */}
                     <Card className="text-center overflow-hidden relative">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-secondary to-green-500" />
                         <AlignmentScore
@@ -230,8 +218,6 @@ const ComparisonView = ({ initialSelected = [null, null] }: ComparisonViewProps)
                         </p>
                     </Card>
 
-
-                    {/* Divergent Votes */}
                     {comparison.divergent_votes.length > 0 && (
                         <Card className="p-0 overflow-hidden">
                             <div className="p-6 border-b border-white/5 flex items-center gap-2">

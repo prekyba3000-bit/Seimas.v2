@@ -1,49 +1,41 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Users, Search, Building2, ChevronRight, Filter, ArrowUpDown } from 'lucide-react';
+import { Users, Search, ChevronRight, ArrowUpDown, AlertTriangle } from 'lucide-react';
 import { motion } from 'motion/react';
-import { API_URL } from '../config';
+import { api, MpSummary } from '../services/api';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { MpCard } from '../components/MpCard';
 import { sortMps, SORT_OPTIONS, SortOption } from '../utils/sorting';
 
-// Main MPs List View
 const MpsListView = () => {
-    const [mps, setMps] = useState<any[]>([]);
+    const [mps, setMps] = useState<MpSummary[]>([]);
     const [search, setSearch] = useState('');
     const [partyFilter, setPartyFilter] = useState<string | null>(null);
     const [sortBy, setSortBy] = useState<SortOption>('name_asc');
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch(`${API_URL}/api/mps`)
-            .then(res => res.json())
-            .then(data => {
-                setMps(data);
-                setLoading(false);
-            })
+        api.getMps()
+            .then(data => setMps(data))
             .catch(err => {
                 console.error('Failed to load MPs', err);
-                setLoading(false);
-            });
+                setError('Failed to load MP data. Please try again.');
+            })
+            .finally(() => setLoading(false));
     }, []);
 
-    // Get unique parties for filter
-    const parties = useMemo(() => [...new Set(mps.map(m => m.party).filter(Boolean))].sort(), [mps]);
-
-    // Filter & Sort MPs
     const processedMps = useMemo(() => {
         const filtered = mps.filter(mp => {
-            const matchesSearch = (mp.name || mp.display_name || '').toLowerCase().includes(search.toLowerCase());
-            const matchesParty = !partyFilter || (mp.party || mp.current_party) === partyFilter;
-            const isActive = mp.is_active !== false; // Show only active MPs
+            const matchesSearch = (mp.name || '').toLowerCase().includes(search.toLowerCase());
+            const matchesParty = !partyFilter || mp.party === partyFilter;
+            const isActive = mp.is_active !== false;
             return matchesSearch && matchesParty && isActive;
         });
         return sortMps(filtered, sortBy);
     }, [mps, search, partyFilter, sortBy]);
 
     const handleMpClick = (mpId: string) => {
-        // eslint-disable-next-line
         window.location.href = `#/mps/${mpId}`;
     };
 
@@ -80,7 +72,6 @@ const MpsListView = () => {
             {/* Smart Search & Filter Bar */}
             <Card className="p-4" style={{ backgroundColor: 'var(--background-elevated)' }}>
                 <div className="flex flex-col md:flex-row gap-4">
-                    {/* Search Input */}
                     <div className="relative group flex-1">
                         <Search
                             className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors"
@@ -102,7 +93,6 @@ const MpsListView = () => {
                         />
                     </div>
 
-                    {/* Sort Dropdown */}
                     <div className="relative min-w-[200px]">
                         <ArrowUpDown
                             className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4"
@@ -147,6 +137,14 @@ const MpsListView = () => {
                 )}
             </Card>
 
+            {/* Error State */}
+            {error && (
+                <div className="p-4 border rounded-xl flex items-center gap-3" style={{ borderColor: 'var(--status-danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--status-danger)' }}>
+                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                    {error}
+                </div>
+            )}
+
             {/* Loading State */}
             {loading ? (
                 <div
@@ -162,7 +160,7 @@ const MpsListView = () => {
                     />
                     Loading MP roster...
                 </div>
-            ) : (
+            ) : !error && (
                 <>
                     {/* MPs Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -176,7 +174,7 @@ const MpsListView = () => {
                     </div>
 
                     {/* Empty State */}
-                    {filtered.length === 0 && (
+                    {processedMps.length === 0 && (
                         <div
                             className="text-center py-20 flex flex-col items-center gap-4"
                             style={{ color: 'var(--text-secondary)' }}

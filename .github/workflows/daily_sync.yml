@@ -36,12 +36,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Sync Engine (Fetch Real MP Data)
+      - name: Sync MP Data
         env:
           DB_DSN: ${{ secrets.DB_DSN }}
         run: python3 sync_real_mps.py
 
-      - name: Run Export (Generate Wall of Shame JSON)
+      - name: Sync Votes from Seimas API
+        env:
+          DB_DSN: ${{ secrets.DB_DSN }}
+        run: python3 ingest_votes_v2.py
+
+      - name: Refresh Materialized View
+        env:
+          DB_DSN: ${{ secrets.DB_DSN }}
+        run: python3 -c "import psycopg2, os; c=psycopg2.connect(os.environ['DB_DSN']); c.autocommit=True; c.cursor().execute('REFRESH MATERIALIZED VIEW CONCURRENTLY mp_stats_summary'); c.close(); print('Materialized view refreshed')"
+
+      - name: Export Stats JSON
         env:
           DB_DSN: ${{ secrets.DB_DSN }}
         run: python3 export_stats.py
