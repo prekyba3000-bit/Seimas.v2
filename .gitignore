@@ -42,3 +42,4 @@ _bmad/
 _bmad-output/
 .vercel
 .env*.local
+.cursor/memory.json
