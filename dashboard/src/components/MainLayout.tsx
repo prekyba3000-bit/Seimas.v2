@@ -8,6 +8,7 @@ import {
   Calendar, 
   Scale, 
   Shield,
+  Trophy,
   Menu,
   Bell,
   Search,
@@ -28,6 +29,7 @@ export function MainLayout() {
     { path: '/dashboard/factions', label: 'Frakcijos', icon: Shield }, 
     { path: '/dashboard/sessions', label: 'Sesijos', icon: Calendar }, 
     { path: '/dashboard/compare', label: 'Palyginimas', icon: Scale }, 
+    { path: '/dashboard/leaderboard', label: 'Leaderboard', icon: Trophy }, 
   ];
 
   return (

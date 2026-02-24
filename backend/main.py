@@ -12,6 +12,10 @@ import threading
 import datetime
 from typing import List, Dict, Optional
 from collections import defaultdict
+try:
+    from backend.hero_engine import calculate_hero_profile, calculate_all_hero_profiles
+except ImportError:
+    from hero_engine import calculate_hero_profile, calculate_all_hero_profiles
 
 # Add root directory to sys.path to allow importing ingestion scripts
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -32,6 +36,11 @@ _refresh_state = {
     "refresh_count": 0,
 }
 _refresh_stop = threading.Event()
+_leaderboard_cache = {
+    "entries": {},
+}
+_leaderboard_cache_lock = threading.Lock()
+CACHE_DURATION_SEC = 3600
 
 
 def _refresh_materialized_view():
@@ -169,7 +178,7 @@ def get_db_conn():
         yield conn
     except Exception as e:
         print(f"Database connection error: {e}")
-        yield None
+        raise
     finally:
         if conn:
             pool.putconn(conn)
@@ -457,6 +466,54 @@ def get_mp_votes(mp_id: str, limit: int = 20):
                 }
                 for row in rows
             ]
+
+
+@app.get("/api/v2/heroes/leaderboard")
+def get_hero_leaderboard(limit: int = 20):
+    """Get all active MP hero profiles sorted by level/xp."""
+    safe_limit = max(1, min(limit, 200))
+    now = time.time()
+
+    with _leaderboard_cache_lock:
+        cached_entry = _leaderboard_cache["entries"].get(safe_limit)
+        if cached_entry and (now - float(cached_entry["timestamp"])) < CACHE_DURATION_SEC:
+            print("Leaderboard: returning cached version.")
+            return cached_entry["data"]
+
+    with get_db_conn() as conn:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+
+        with conn.cursor() as cur:
+            try:
+                print("Leaderboard: re-calculating and caching.")
+                all_profiles = calculate_all_hero_profiles(
+                    db_cursor=cur, active_only=True, limit=safe_limit
+                )
+                with _leaderboard_cache_lock:
+                    _leaderboard_cache["entries"][safe_limit] = {
+                        "data": all_profiles,
+                        "timestamp": now,
+                    }
+                return all_profiles
+            except Exception as exc:
+                raise HTTPException(status_code=500, detail=f"Failed to build leaderboard: {exc}")
+
+
+@app.get("/api/v2/heroes/{mp_id}")
+def get_hero_profile(mp_id: str):
+    """Get the gamified hero profile for a single MP."""
+    with get_db_conn() as conn:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+
+        with conn.cursor() as cur:
+            try:
+                return calculate_hero_profile(mp_id=mp_id, db_cursor=cur)
+            except ValueError:
+                raise HTTPException(status_code=404, detail="MP not found")
+            except Exception as exc:
+                raise HTTPException(status_code=500, detail=f"Failed to build hero profile: {exc}")
 
 
 @app.get("/api/votes")

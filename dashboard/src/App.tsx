@@ -8,6 +8,7 @@ import VotesListView from './views/VotesListView';
 import VoteDetailView from './views/VoteDetailView';
 import ComparisonView from './views/ComparisonView';
 import MpsListView from './views/MpsListView';
+import LeaderboardView from './views/LeaderboardView';
 import { DashboardView } from './views/DashboardView';
 import FactionsView from './views/FactionsView';
 import SessionsView from './views/SessionsView';
@@ -48,6 +49,7 @@ function App() {
                     <Route path="factions" element={<FactionsView />} />
                     <Route path="sessions" element={<SessionsView />} />
                     <Route path="compare" element={<ComparisonView />} />
+                    <Route path="leaderboard" element={<LeaderboardView />} />
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />

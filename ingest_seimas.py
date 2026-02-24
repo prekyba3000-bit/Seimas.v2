@@ -30,6 +30,25 @@ def parse_date(date_str):
     except ValueError:
         return None
 
+
+def is_committee_role(role_name: str, department_name: str) -> bool:
+    role_val = (role_name or "").lower()
+    dep_val = (department_name or "").lower()
+    role_keywords = ("pirminink", "pavaduotoj", "narys", "member", "chair", "deputy")
+    committee_keywords = ("komitet", "committee")
+    has_role = any(keyword in role_val for keyword in role_keywords)
+    has_committee = any(keyword in dep_val for keyword in committee_keywords)
+    return has_role and has_committee
+
+
+def normalize_committee_role(role_name: str) -> str:
+    role_val = (role_name or "").lower()
+    if "pirminink" in role_val and "pavaduotoj" not in role_val:
+        return "Chair"
+    if "pavaduotoj" in role_val or "deputy" in role_val:
+        return "Deputy Chair"
+    return "Member"
+
 def sync_db():
     if not DB_DSN:
         print("ERROR: DB_DSN environment variable not set.")
@@ -40,6 +59,7 @@ def sync_db():
     root = ET.fromstring(response.content)
     
     mps = []
+    committee_rows = []
     active_count = 0
     
     # Adjusted to match actual API response which uses CamelCase and Lithuanian diacritics
@@ -63,9 +83,21 @@ def sync_db():
         # However, to make it work, we must traverse Pareigos.
         party = 'Unknown'
         for pareigos in node.findall('Pareigos'):
-            if pareigos.get('pareigos') == 'Frakcijos narys':
-                party = pareigos.get('padalinio_pavadinimas')
-                break
+            role_name = pareigos.get('pareigos')
+            department_name = pareigos.get('padalinio_pavadinimas')
+
+            if role_name == 'Frakcijos narys':
+                party = department_name
+
+            if is_committee_role(role_name or "", department_name or ""):
+                committee_rows.append((
+                    mp_id,
+                    department_name or "Unknown committee",
+                    normalize_committee_role(role_name or ""),
+                    parse_date(pareigos.get('data_nuo')),
+                    parse_date(pareigos.get('data_iki')),
+                    pareigos.get('pareigu_id') or pareigos.get('id') or role_name,
+                ))
         
         first_name = node.get('vardas') or ''
         last_name = node.get('pavardė') or ''
@@ -100,6 +132,49 @@ def sync_db():
     """
     
     execute_values(cur, sql, mps)
+    if committee_rows:
+        mp_ext_ids = [row[2] for row in mps]
+        cur.execute(
+            """
+            SELECT id, seimas_mp_id
+            FROM politicians
+            WHERE seimas_mp_id = ANY(%s::int[])
+            """,
+            (mp_ext_ids,),
+        )
+        id_map = {str(row[1]): str(row[0]) for row in cur.fetchall()}
+        committee_payload = [
+            (
+                id_map[ext_mp_id],
+                committee_name,
+                role,
+                start_date,
+                end_date,
+                source_duty_id
+            )
+            for ext_mp_id, committee_name, role, start_date, end_date, source_duty_id in committee_rows
+            if ext_mp_id in id_map
+        ]
+
+        if committee_payload:
+            mp_uuid_list = sorted({row[0] for row in committee_payload})
+            cur.execute(
+                """
+                DELETE FROM committee_memberships
+                WHERE mp_id = ANY(%s::uuid[])
+                """,
+                (mp_uuid_list,),
+            )
+            execute_values(
+                cur,
+                """
+                INSERT INTO committee_memberships (
+                    mp_id, committee_name, role, start_date, end_date, source_duty_id
+                ) VALUES %s
+                """,
+                committee_payload
+            )
+
     conn.commit()
     cur.close()
     conn.close()

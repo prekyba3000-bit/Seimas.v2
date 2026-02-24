@@ -47,27 +47,35 @@ def fetch_speech_rows(seimas_mp_id: int):
     root = ET.fromstring(response.content)
     rows = []
 
-    for node in root.findall(".//pranesimas"):
-        attrs = node.attrib or {}
-        # Match both attribute-based and child-based XML variations.
-        date_value = get_attr(node, ("pranesimo_data", "data", "date")) or get_child_text(
-            node, ("pranesimo_data", "data", "date")
-        )
-        title_value = get_attr(node, ("pavadinimas", "antraste", "title")) or get_child_text(
-            node, ("pavadinimas", "antraste", "title")
-        )
-        url_value = get_attr(node, ("nuoroda", "url", "link")) or get_child_text(
-            node, ("nuoroda", "url", "link")
-        )
-
-        if date_value is None and title_value is None and url_value is None:
+    # Real endpoint shape:
+    # <SeimoInformacija><SeimoNarys ...><SeimoNarioPranešimasŽiniasklaidai data="" pavadinimas="" teksto_nuoroda=""/>
+    for member_node in root.findall(".//SeimoNarys"):
+        member_sid = get_attr(member_node, ("asmens_id", "asmuo_id", "sn_id"))
+        # Keep strict mapping to requested MP to avoid cross-member bleed.
+        if member_sid and str(member_sid) != str(seimas_mp_id):
             continue
 
-        speech_date = parse_date(date_value)
-        if speech_date is None:
-            continue
+        press_nodes = member_node.findall(".//SeimoNarioPranešimasŽiniasklaidai")
+        # Fallback for potential alternative naming.
+        if not press_nodes:
+            press_nodes = member_node.findall(".//pranesimas")
 
-        rows.append((speech_date, title_value, url_value))
+        for node in press_nodes:
+            date_value = get_attr(node, ("data", "pranesimo_data", "date")) or get_child_text(
+                node, ("data", "pranesimo_data", "date")
+            )
+            title_value = get_attr(node, ("pavadinimas", "antraste", "title")) or get_child_text(
+                node, ("pavadinimas", "antraste", "title")
+            )
+            url_value = get_attr(node, ("teksto_nuoroda", "nuoroda", "url", "link")) or get_child_text(
+                node, ("teksto_nuoroda", "nuoroda", "url", "link")
+            )
+
+            speech_date = parse_date(date_value)
+            if speech_date is None:
+                continue
+
+            rows.append((speech_date, title_value, url_value))
 
     return rows
 

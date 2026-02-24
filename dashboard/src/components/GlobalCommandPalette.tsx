@@ -7,6 +7,7 @@ import {
   Vote, 
   Calendar, 
   GitCompare, 
+  Trophy,
   FileText,
   Settings,
   User
@@ -97,6 +98,12 @@ export function GlobalCommandPalette() {
             >
               <GitCompare className="mr-2 h-4 w-4" />
               <span>Palyginimas</span>
+            </CommandItem>
+            <CommandItem
+              onSelect={() => runCommand(() => navigate('/dashboard/leaderboard'))}
+            >
+              <Trophy className="mr-2 h-4 w-4" />
+              <span>Leaderboard</span>
             </CommandItem>
           </CommandGroup>
 

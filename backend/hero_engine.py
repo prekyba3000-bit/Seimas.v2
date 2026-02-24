@@ -67,17 +67,17 @@ def _award_artifacts(metrics: Dict[str, float], integrity_score: float, level: i
     return artifacts
 
 
-def _derive_alignment(party_loyalty: float, integrity_score: float) -> str:
-    if party_loyalty > 90:
+def _derive_alignment(party_loyalty: float, attendance_percentage: float) -> str:
+    if party_loyalty > 60:
         method_axis = "Lawful"
-    elif party_loyalty < 70:
+    elif party_loyalty < 30:
         method_axis = "Chaotic"
     else:
         method_axis = "Neutral"
 
-    if integrity_score > 75:
+    if attendance_percentage > 90:
         motive_axis = "Good"
-    elif integrity_score < 40:
+    elif attendance_percentage < 70:
         motive_axis = "Evil"
     else:
         motive_axis = "Neutral"
@@ -191,31 +191,64 @@ def _fetch_amendments_direct(mp_id: str, db_cursor) -> Tuple[float, bool]:
 
     columns = _fetch_table_columns(db_cursor, "amendment_profiles")
     id_column = _pick_existing_column(columns, ["politician_id", "mp_id"])
-    amendment_column = _pick_existing_column(
-        columns, ["amendments_proposed", "amendment_count", "proposed_count", "count_proposed"]
-    )
-    if not id_column or not amendment_column:
+    if not id_column:
         return (0.0, False)
 
-    ts_column = _pick_existing_column(columns, ["updated_at", "created_at", "analyzed_at"])
-    order_sql = f"ORDER BY {ts_column} DESC" if ts_column else ""
     db_cursor.execute(
         f"""
-        SELECT COALESCE({amendment_column}, 0) AS amendments_proposed
+        SELECT COUNT(*)::float AS amendments_proposed
         FROM amendment_profiles
-        WHERE {id_column} = %s::uuid
-        {order_sql}
-        LIMIT 1
+        WHERE {id_column}::text = %s
         """,
         (mp_id,),
     )
     row = db_cursor.fetchone()
     if not row:
         return (0.0, False)
-    return (float(row["amendments_proposed"] or 0), True)
+    amendments_count = float(row["amendments_proposed"] or 0)
+    return (amendments_count, amendments_count > 0)
 
 
-def _build_forensic_breakdown(mp_id: str, db_cursor, base_risk_score: float) -> Dict[str, Any]:
+def _fetch_amendments_proxy(mp_id: str, db_cursor) -> float:
+    """Resolve per-MP amendment count with schema-aware fallback."""
+    if _table_exists(db_cursor, "mp_stats_summary"):
+        summary_columns = _fetch_table_columns(db_cursor, "mp_stats_summary")
+        summary_column = _pick_existing_column(
+            summary_columns,
+            ["amendments_proposed_proxy", "amendments_proposed", "amendment_votes"],
+        )
+        if summary_column:
+            db_cursor.execute(
+                f"""
+                SELECT COALESCE({summary_column}, 0) AS amendments_proposed
+                FROM mp_stats_summary
+                WHERE mp_id = %s::uuid
+                """,
+                (mp_id,),
+            )
+            row = db_cursor.fetchone()
+            if row:
+                return float(row["amendments_proposed"] or 0)
+
+    db_cursor.execute(
+        """
+        SELECT COUNT(mv.vote_id) FILTER (
+            WHERE COALESCE(mv.vote_choice, '') !~* '^nedalyvavo$'
+              AND COALESCE(v.vote_type, '') ILIKE '%%pateik%%'
+        )::float AS amendments_proposed
+        FROM mp_votes mv
+        LEFT JOIN votes v ON mv.vote_id = v.seimas_vote_id
+        WHERE mv.politician_id = %s::uuid
+        """,
+        (mp_id,),
+    )
+    row = db_cursor.fetchone()
+    return float(row["amendments_proposed"] or 0) if row else 0.0
+
+
+def _build_forensic_breakdown(
+    mp_id: str, db_cursor, base_risk_score: float, party_loyalty_pct: float
+) -> Dict[str, Any]:
     base_risk_penalty = -float(base_risk_score)
 
     benford = {
@@ -495,81 +528,26 @@ def _build_forensic_breakdown(mp_id: str, db_cursor, base_risk_score: float) -> 
                     "explanation": "No phantom network hits found for this MP.",
                 }
 
-    db_cursor.execute(
-        """
-        WITH party_consensus AS (
-            SELECT
-                mv.vote_id,
-                v.sitting_date,
-                p.current_party,
-                mv.vote_choice,
-                COUNT(*) AS choice_count,
-                ROW_NUMBER() OVER (
-                    PARTITION BY mv.vote_id, p.current_party
-                    ORDER BY COUNT(*) DESC, mv.vote_choice ASC
-                ) AS row_num
-            FROM mp_votes mv
-            JOIN politicians p ON mv.politician_id = p.id
-            JOIN votes v ON mv.vote_id = v.seimas_vote_id
-            WHERE COALESCE(mv.vote_choice, '') !~* '^nedalyvavo$'
-            GROUP BY mv.vote_id, v.sitting_date, p.current_party, mv.vote_choice
-        ),
-        dominant_choice AS (
-            SELECT vote_id, sitting_date, current_party, vote_choice AS party_majority_choice
-            FROM party_consensus
-            WHERE row_num = 1
-        ),
-        day_alignment AS (
-            SELECT
-                p.id AS mp_id,
-                dc.sitting_date,
-                COUNT(*) AS day_votes,
-                COUNT(*) FILTER (WHERE mv.vote_choice = dc.party_majority_choice) AS day_aligned_votes
-            FROM mp_votes mv
-            JOIN politicians p ON mv.politician_id = p.id
-            JOIN dominant_choice dc
-                ON mv.vote_id = dc.vote_id
-               AND p.current_party = dc.current_party
-            WHERE COALESCE(mv.vote_choice, '') !~* '^nedalyvavo$'
-            GROUP BY p.id, dc.sitting_date
-        ),
-        loyalty_days AS (
-            SELECT
-                mp_id,
-                COUNT(*) AS total_days,
-                COUNT(*) FILTER (
-                    WHERE day_votes > 0
-                      AND (day_aligned_votes::numeric / day_votes) * 100 < 50
-                ) AS independent_days
-            FROM day_alignment
-            GROUP BY mp_id
-        )
-        SELECT
-            COALESCE(total_days, 0) AS total_days,
-            COALESCE(independent_days, 0) AS independent_days
-        FROM loyalty_days
-        WHERE mp_id = %s::uuid
-        """,
-        (mp_id,),
-    )
-    loyalty_row = db_cursor.fetchone()
-    total_days = int(loyalty_row["total_days"]) if loyalty_row else 0
-    independent_days = int(loyalty_row["independent_days"]) if loyalty_row else 0
-    independent_pct = (independent_days / total_days * 100) if total_days > 0 else 0.0
+    # Use disloyalty percentage derived from party loyalty; this avoids inversion ambiguity.
+    disloyalty_pct = _clamp(100.0 - party_loyalty_pct, 0.0, 100.0)
     loyalty_bonus = 0
-    if independent_pct > 40:
+    if 10.0 < disloyalty_pct < 40.0:
         loyalty_bonus = 10
-    elif independent_pct > 20:
-        loyalty_bonus = 5
 
     loyalty_bonus_obj = {
         "status": "warning" if loyalty_bonus > 0 else "clean",
-        "independent_voting_days_pct": round(independent_pct, 2),
+        "independent_voting_days_pct": round(disloyalty_pct, 2),
         "bonus": loyalty_bonus,
         "explanation": (
-            f"Voted against party line on {independent_pct:.1f}% of voting days, indicating independent judgment."
+            (
+                f"Estimated independent voting rate is {disloyalty_pct:.1f}%; "
+                "this is independent but not fully detached, so integrity bonus is applied."
+            )
             if loyalty_bonus > 0
-            else "Party-line divergence remains within expected range."
+            else (
+                f"Estimated independent voting rate is {disloyalty_pct:.1f}%; "
+                "outside the calibrated 10-40% independent range, so no loyalty bonus is applied."
+            )
         ),
     }
 
@@ -792,12 +770,17 @@ def _fetch_metric_maxima(db_cursor) -> Dict[str, float]:
     amendments_direct_available = False
     if _table_exists(db_cursor, "amendment_profiles"):
         columns = _fetch_table_columns(db_cursor, "amendment_profiles")
-        amendment_column = _pick_existing_column(
-            columns, ["amendments_proposed", "amendment_count", "proposed_count", "count_proposed"]
-        )
-        if amendment_column:
+        id_column = _pick_existing_column(columns, ["politician_id", "mp_id"])
+        if id_column:
             db_cursor.execute(
-                f"SELECT COALESCE(MAX({amendment_column}), 0) AS max_amendments FROM amendment_profiles"
+                f"""
+                SELECT COALESCE(MAX(amendment_count), 0) AS max_amendments
+                FROM (
+                    SELECT {id_column}, COUNT(*) AS amendment_count
+                    FROM amendment_profiles
+                    GROUP BY {id_column}
+                ) t
+                """
             )
             amendments_row = db_cursor.fetchone()
             amendments_direct_max = float(amendments_row["max_amendments"] or 0)
@@ -817,7 +800,7 @@ def _fetch_metric_maxima(db_cursor) -> Dict[str, float]:
 
 def calculate_hero_profile(mp_id: str, db_cursor) -> Dict[str, Any]:
     metrics_provenance = {
-        "STR": "proxy",
+        "STR": "unavailable",
         "WIS": "proxy",
         "CHA": "proxy",
         "INT": "proxy",
@@ -832,7 +815,7 @@ def calculate_hero_profile(mp_id: str, db_cursor) -> Dict[str, Any]:
     party_loyalty = _fetch_party_loyalty(mp_id, db_cursor)
     social_bonus = _fetch_social_bonus(mp_id, db_cursor)
     risk_score, high_risk_alerts = _fetch_conflict_metrics(mp_id, db_cursor)
-    forensic_breakdown = _build_forensic_breakdown(mp_id, db_cursor, risk_score)
+    forensic_breakdown = _build_forensic_breakdown(mp_id, db_cursor, risk_score, party_loyalty)
     amendments_direct, has_direct_amendments = _fetch_amendments_direct(mp_id, db_cursor)
 
     years_in_parliament = _years_since(mp_row["first_vote_date"])
@@ -840,11 +823,25 @@ def calculate_hero_profile(mp_id: str, db_cursor) -> Dict[str, Any]:
     committee_leadership = float(mp_row["committee_leadership_roles"] or 0)
     bills_passed = float(mp_row["votes_for_passed"] or 0)
     total_votes_cast = float(mp_row["total_votes_cast"] or 0)
-    speeches_given = float(mp_row["speeches_given"] or 0)
+    # Direct source of CHA: count communication entries in speeches table for this MP.
+    db_cursor.execute("SELECT COUNT(*) AS speech_count FROM speeches WHERE mp_id::text = %s", (mp_id,))
+    speech_row = db_cursor.fetchone()
+    speeches_given = float(speech_row["speech_count"] or 0) if speech_row else 0.0
     attendance_percentage = float(mp_row["attendance_percentage"] or 0)
-    amendments_proposed_proxy = float(mp_row["amendment_votes"] or 0)
+    amendments_proposed_proxy = _fetch_amendments_proxy(mp_id, db_cursor)
     amendments_proposed = amendments_direct if has_direct_amendments else amendments_proposed_proxy
     bills_proposed = bills_authored
+
+    db_cursor.execute(
+        """
+        SELECT COALESCE(NULLIF(current_party, ''), 'Unknown') AS party_name
+        FROM politicians
+        WHERE id = %s::uuid
+        """,
+        (mp_id,),
+    )
+    party_row = db_cursor.fetchone()
+    party_name = party_row["party_name"] if party_row else (mp_row["current_party"] or "Unknown")
 
     str_score = (0.6 * _normalize(bills_authored, maxima["max_bills_authored"])) + (
         0.4 * _normalize(committee_leadership, maxima["max_committee_leadership"])
@@ -853,6 +850,7 @@ def calculate_hero_profile(mp_id: str, db_cursor) -> Dict[str, Any]:
         0.3 * _normalize(total_votes_cast, maxima["max_total_votes_cast"])
     )
     cha_score = (0.5 * _normalize(speeches_given, maxima["max_speeches_given"])) + (0.5 * social_bonus)
+    # INT remains 100 when forensic source tables are empty; this is expected baseline behavior.
     int_score = float(forensic_breakdown["final_integrity_score"])
     amendments_max = (
         maxima["max_amendments_proposed_direct"]
@@ -863,7 +861,9 @@ def calculate_hero_profile(mp_id: str, db_cursor) -> Dict[str, Any]:
         0.2 * _normalize(amendments_proposed, amendments_max)
     )
 
-    if maxima["max_bills_authored"] > 0 or maxima["max_committee_leadership"] > 0:
+    if bills_authored == 0:
+        metrics_provenance["STR"] = "unavailable"
+    elif maxima["max_bills_authored"] > 0 or maxima["max_committee_leadership"] > 0:
         metrics_provenance["STR"] = "direct"
     if maxima["max_years_in_parliament"] > 0 and maxima["max_total_votes_cast"] > 0:
         metrics_provenance["WIS"] = "direct"
@@ -896,7 +896,9 @@ def calculate_hero_profile(mp_id: str, db_cursor) -> Dict[str, Any]:
     else:
         level = max(0, int(math.floor(math.log(xp / 100))))
 
-    alignment = _derive_alignment(party_loyalty=party_loyalty, integrity_score=int_score)
+    alignment = _derive_alignment(
+        party_loyalty=party_loyalty, attendance_percentage=attendance_percentage
+    )
     current_level_xp, next_level_xp = _xp_progress(xp=xp, level=level)
 
     metrics = {
@@ -928,7 +930,7 @@ def calculate_hero_profile(mp_id: str, db_cursor) -> Dict[str, Any]:
         "mp": {
             "id": str(mp_row["id"]),
             "name": mp_row["display_name"],
-            "party": mp_row["current_party"],
+            "party": party_name,
             "photo": mp_row["photo_url"],
             "active": mp_row["is_active"],
             "seimas_id": mp_row["seimas_mp_id"],
@@ -952,11 +954,22 @@ def calculate_hero_profile(mp_id: str, db_cursor) -> Dict[str, Any]:
     }
 
 
-def calculate_all_hero_profiles(db_cursor, active_only: bool = True) -> List[Dict[str, Any]]:
+def calculate_all_hero_profiles(
+    db_cursor, active_only: bool = True, limit: int | None = None
+) -> List[Dict[str, Any]]:
     if active_only:
-        db_cursor.execute("SELECT id FROM politicians WHERE is_active = TRUE ORDER BY display_name")
+        if limit is not None:
+            db_cursor.execute(
+                "SELECT id FROM politicians WHERE is_active = TRUE ORDER BY display_name LIMIT %s",
+                (limit,),
+            )
+        else:
+            db_cursor.execute("SELECT id FROM politicians WHERE is_active = TRUE ORDER BY display_name")
     else:
-        db_cursor.execute("SELECT id FROM politicians ORDER BY display_name")
+        if limit is not None:
+            db_cursor.execute("SELECT id FROM politicians ORDER BY display_name LIMIT %s", (limit,))
+        else:
+            db_cursor.execute("SELECT id FROM politicians ORDER BY display_name")
     rows = db_cursor.fetchall()
 
     profiles: List[Dict[str, Any]] = []
