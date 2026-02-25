@@ -3,7 +3,10 @@ import datetime as dt
 import html
 import math
 import mimetypes
+import subprocess
+import sys
 import tempfile
+import threading
 from pathlib import Path
 from string import Template
 from typing import Any, Dict, Tuple
@@ -24,6 +27,8 @@ FORMAT_DIMENSIONS: Dict[str, Tuple[int, int]] = {
     "primary": (1200, 628),
     "square": (1080, 1080),
 }
+_playwright_install_lock = threading.Lock()
+_playwright_install_attempted = False
 
 RARITY_BORDER = {
     "mythic": "#facc15",
@@ -166,6 +171,19 @@ def _build_radar_svg(attributes: dict) -> str:
     )
 
 
+def _ensure_playwright_chromium() -> None:
+    global _playwright_install_attempted
+    with _playwright_install_lock:
+        if _playwright_install_attempted:
+            return
+        _playwright_install_attempted = True
+        subprocess.run(
+            [sys.executable, "-m", "playwright", "install", "chromium"],
+            check=True,
+            timeout=900,
+        )
+
+
 def render_share_card(hero_profile: Dict[str, Any], card_format: str = "primary") -> bytes:
     fmt = card_format.lower()
     if fmt not in FORMAT_DIMENSIONS:
@@ -210,11 +228,23 @@ def render_share_card(hero_profile: Dict[str, Any], card_format: str = "primary"
         html_path.write_text(rendered, encoding="utf-8")
         png_path = Path(tmp_dir) / "share_card.png"
 
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
-            page = browser.new_page(viewport={"width": width, "height": height, "device_scale_factor": 1})
-            page.goto(html_path.as_uri(), wait_until="load")
-            page.screenshot(path=str(png_path), type="png")
-            browser.close()
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch()
+                page = browser.new_page(viewport={"width": width, "height": height, "device_scale_factor": 1})
+                page.goto(html_path.as_uri(), wait_until="load")
+                page.screenshot(path=str(png_path), type="png")
+                browser.close()
+        except Exception as exc:
+            message = str(exc)
+            if "Executable doesn't exist" not in message:
+                raise
+            _ensure_playwright_chromium()
+            with sync_playwright() as p:
+                browser = p.chromium.launch()
+                page = browser.new_page(viewport={"width": width, "height": height, "device_scale_factor": 1})
+                page.goto(html_path.as_uri(), wait_until="load")
+                page.screenshot(path=str(png_path), type="png")
+                browser.close()
 
         return png_path.read_bytes()
