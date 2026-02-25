@@ -1,7 +1,8 @@
 import React from 'react';
-import { ChevronDown, Shield, Sparkles, Star, Swords, Trophy } from 'lucide-react';
+import { ChevronDown, Sparkles, Star, Swords, Trophy } from 'lucide-react';
 import { Card } from './Card';
 import { RadarAttributeChart } from './RadarAttributeChart';
+import { AlignmentBadge } from './AlignmentBadge';
 
 interface HeroAttributes {
   STR: number;
@@ -63,17 +64,20 @@ interface ForensicEntry {
 }
 
 const rarityClass: Record<string, string> = {
-  Epic: 'text-purple-300 border-purple-500/40 bg-purple-500/10',
-  Rare: 'text-cyan-300 border-cyan-500/40 bg-cyan-500/10',
-  Cursed: 'text-red-300 border-red-500/40 bg-red-500/10',
+  Mythic: 'border-yellow-400 text-[#F5E8B0] bg-yellow-500/10',
+  Legendary: 'border-purple-500 text-purple-200 bg-purple-500/10',
+  Epic: 'border-blue-400 text-blue-200 bg-blue-500/10',
+  Rare: 'border-green-400 text-green-200 bg-green-500/10',
+  Common: 'border-gray-500 text-gray-200 bg-gray-500/10',
+  Cursed: 'border-red-500 text-red-200 bg-red-500/10',
 };
 
 const statusBadgeClass: Record<ForensicStatus, string> = {
-  clean: 'bg-green-500/10 text-green-300 border-green-500/30',
-  warning: 'bg-yellow-500/10 text-yellow-300 border-yellow-500/30',
-  flagged: 'bg-orange-500/10 text-orange-300 border-orange-500/30',
-  critical: 'bg-red-500/10 text-red-300 border-red-500/30',
-  unavailable: 'bg-gray-500/10 text-gray-300 border-gray-500/30',
+  clean: 'bg-[#7AA2F7]/25 text-[#A9B1D6] border-[#7AA2F7]/40',
+  warning: 'bg-[#7AA2F7]/25 text-[#A9B1D6] border-[#7AA2F7]/40',
+  flagged: 'bg-[#7AA2F7]/25 text-[#A9B1D6] border-[#7AA2F7]/40',
+  critical: 'bg-[#7AA2F7]/25 text-[#A9B1D6] border-[#7AA2F7]/40',
+  unavailable: 'bg-[#7AA2F7]/20 text-[#A9B1D6] border-[#7AA2F7]/30',
 };
 
 const formatXp = (value: number) => value.toLocaleString();
@@ -115,39 +119,40 @@ export default function HeroCard({ hero }: { hero: HeroProfile }) {
   };
 
   return (
-    <Card className="p-6 md:p-8 space-y-8">
+    <Card className="p-6 md:p-8 space-y-8 bg-[#2D2E3A] border-[#4E597B] text-[#A9B1D6] rounded-2xl shadow-[0_0_45px_rgba(122,162,247,0.18)]">
       <div className="flex flex-col md:flex-row md:items-center gap-6">
         <img
           src={hero.mp.photo || fallbackPhoto}
           alt={hero.mp.name}
-          className="w-28 h-28 rounded-2xl object-cover bg-white/5 ring-2 ring-cyan-500/30"
+          className="w-28 h-28 rounded-2xl object-cover bg-[#1A1B26] ring-2 ring-[#7AA2F7]/40"
           onError={(e) => {
             (e.target as HTMLImageElement).src = fallbackPhoto;
           }}
         />
 
         <div className="flex-1">
-          <div className="text-xs uppercase tracking-[0.2em] text-cyan-300/80 mb-2 flex items-center gap-2">
+          <div className="text-xs uppercase tracking-[0.2em] text-[#7AA2F7]/90 mb-2 flex items-center gap-2">
             <Sparkles className="w-3 h-3" />
             Hero Profile
           </div>
-          <h1 className="text-3xl font-black">{hero.mp.name}</h1>
-          <div className="text-sm text-gray-400 mt-1">{hero.mp.party || 'Independent'}</div>
-          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-400/30 bg-cyan-500/10 text-cyan-200 text-sm">
-            <Shield className="w-4 h-4" />
-            {hero.alignment}
+          <h1 className="text-2xl md:text-3xl font-bold text-[#A9B1D6]">{hero.mp.name}</h1>
+          <div className="text-sm text-[#A9B1D6]/70 mt-1">{hero.mp.party || 'Independent'}</div>
+          <div className="mt-3">
+            <AlignmentBadge alignment={hero.alignment} />
           </div>
         </div>
 
-        <div className="md:text-right">
-          <div className="text-xs uppercase tracking-[0.2em] text-gray-400">Level</div>
-          <div className="text-5xl font-black text-cyan-300 leading-none">{hero.level}</div>
+        <div className="md:text-right flex md:block items-center gap-3">
+          <div className="text-xs uppercase tracking-[0.2em] text-[#A9B1D6]/70">Level</div>
+          <div className="w-16 h-16 rounded-full border-2 border-[#7AA2F7]/70 bg-[#1A1B26] text-[#7AA2F7] text-3xl font-bold flex items-center justify-center shadow-[0_0_16px_rgba(122,162,247,0.35)]">
+            {hero.level}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        <Card className="p-6 bg-white/[0.02] border-white/10">
-          <div className="flex items-center gap-2 text-sm uppercase tracking-[0.15em] text-gray-400 mb-5">
+        <Card className="p-6 bg-[#1A1B26] border-[#4E597B] rounded-2xl">
+          <div className="flex items-center gap-2 text-sm uppercase tracking-[0.15em] text-[#A9B1D6]/70 mb-5">
             <Swords className="w-4 h-4" />
             Attributes
           </div>
@@ -157,26 +162,29 @@ export default function HeroCard({ hero }: { hero: HeroProfile }) {
         </Card>
 
         <div className="space-y-6">
-          <Card className="p-6 bg-white/[0.02] border-white/10">
-            <div className="flex items-center gap-2 text-sm uppercase tracking-[0.15em] text-gray-400 mb-4">
+          <Card className="p-6 bg-[#1A1B26] border-[#4E597B] rounded-2xl">
+            <div className="flex items-center gap-2 text-sm uppercase tracking-[0.15em] text-[#A9B1D6]/70 mb-4">
               <Star className="w-4 h-4" />
               Experience
             </div>
-            <div className="text-2xl font-bold mb-2">{formatXp(hero.xp)} XP</div>
-            <div className="w-full h-3 bg-gray-800 rounded-full overflow-hidden">
+            <div className="text-2xl font-bold mb-3 text-[#A9B1D6]">{formatXp(hero.xp)} XP</div>
+            <div className="relative w-full h-6 bg-[#2D2E3A] border border-[#4E597B] rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-700"
+                className="h-full bg-gradient-to-r from-[#3E4C76] to-[#7AA2F7] transition-all duration-700"
                 style={{ width: `${progress}%` }}
               />
+              <div className="absolute inset-0 flex items-center justify-center text-[11px] md:text-xs font-semibold text-white/90">
+                XP: {formatXp(hero.xp_current_level)} / {formatXp(hero.xp_next_level)}
+              </div>
             </div>
-            <div className="flex justify-between text-xs text-gray-400 mt-2">
+            <div className="flex justify-between text-xs text-[#A9B1D6]/70 mt-2">
               <span>{formatXp(hero.xp_current_level)} XP</span>
               <span>{formatXp(hero.xp_next_level)} XP</span>
             </div>
           </Card>
 
-          <Card className="p-6 bg-white/[0.02] border-white/10">
-            <div className="flex items-center gap-2 text-sm uppercase tracking-[0.15em] text-gray-400 mb-4">
+          <Card className="p-6 bg-[#1A1B26] border-[#4E597B] rounded-2xl">
+            <div className="flex items-center gap-2 text-sm uppercase tracking-[0.15em] text-[#A9B1D6]/70 mb-4">
               <Trophy className="w-4 h-4" />
               Artifacts
             </div>
@@ -186,7 +194,7 @@ export default function HeroCard({ hero }: { hero: HeroProfile }) {
                   <div
                     key={`${artifact.name}-${index}`}
                     className={`rounded-lg px-3 py-2 border ${
-                      rarityClass[artifact.rarity] || 'text-gray-200 border-white/20 bg-white/5'
+                      rarityClass[artifact.rarity] || 'text-[#A9B1D6] border-gray-500 bg-gray-500/10'
                     }`}
                   >
                     <div className="font-semibold">{artifact.name}</div>
@@ -195,19 +203,19 @@ export default function HeroCard({ hero }: { hero: HeroProfile }) {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-400">No artifacts unlocked yet.</p>
+              <p className="text-sm text-[#A9B1D6]/70">No artifacts unlocked yet.</p>
             )}
           </Card>
         </div>
       </div>
 
-      <Card className="p-6 bg-white/[0.02] border-white/10">
+      <Card className="p-6 bg-[#1A1B26] border-[#4E597B] rounded-2xl">
         <button
           className="w-full flex items-center justify-between text-left"
           onClick={() => setShowBreakdown((prev) => !prev)}
         >
           <div>
-            <div className="text-sm uppercase tracking-[0.15em] text-gray-400">Score Transparency</div>
+            <div className="text-sm uppercase tracking-[0.15em] text-[#A9B1D6]/70">Score Transparency</div>
             <div className="text-lg font-semibold mt-1">Why this score?</div>
           </div>
           <ChevronDown className={`w-5 h-5 transition-transform ${showBreakdown ? 'rotate-180' : ''}`} />
@@ -215,20 +223,20 @@ export default function HeroCard({ hero }: { hero: HeroProfile }) {
 
         {showBreakdown && (
           <div className="mt-6 space-y-3">
-            <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 text-sm">
+            <div className="rounded-xl border border-[#4E597B] bg-[#2D2E3A] p-3 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-gray-300">Base Risk Penalty</span>
+                <span className="text-[#A9B1D6]">Base Risk Penalty</span>
                 <span className="font-semibold text-red-300">
                   {pointsLabel(hero.forensic_breakdown.base_risk_penalty)}
                 </span>
               </div>
-              <div className="text-xs text-gray-400 mt-1">
+              <div className="text-xs text-[#A9B1D6]/70 mt-1">
                 Base risk score: {hero.forensic_breakdown.base_risk_score}
               </div>
             </div>
 
             {forensicRows.map((row) => (
-              <div key={row.key} className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+              <div key={row.key} className="rounded-xl border border-[#4E597B] bg-[#2D2E3A] p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="font-medium">{row.label}</div>
                   <div className="flex items-center gap-2">
@@ -240,28 +248,28 @@ export default function HeroCard({ hero }: { hero: HeroProfile }) {
                     <span className="text-sm font-semibold">{pointsLabel(row.data.penalty)}</span>
                   </div>
                 </div>
-                <p className="text-xs text-gray-400 mt-2">{row.data.explanation}</p>
+                <p className="text-xs text-[#A9B1D6]/70 mt-2">{row.data.explanation}</p>
               </div>
             ))}
 
-            <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+            <div className="rounded-xl border border-[#4E597B] bg-[#2D2E3A] p-3">
               <div className="flex items-center justify-between">
                 <span className="font-medium">Loyalty Bonus</span>
                 <span className="text-sm font-semibold text-green-300">
                   {pointsLabel(hero.forensic_breakdown.loyalty_bonus.bonus)}
                 </span>
               </div>
-              <p className="text-xs text-gray-400 mt-2">{hero.forensic_breakdown.loyalty_bonus.explanation}</p>
+              <p className="text-xs text-[#A9B1D6]/70 mt-2">{hero.forensic_breakdown.loyalty_bonus.explanation}</p>
             </div>
 
-            <div className="pt-2 border-t border-white/10 space-y-2">
+            <div className="pt-2 border-t border-[#4E597B] space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-300">Total Forensic Adjustment</span>
+                <span className="text-[#A9B1D6]">Total Forensic Adjustment</span>
                 <span className="font-bold">{pointsLabel(adjustment)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-300">Final Integrity Score</span>
-                <span className="font-bold text-cyan-300">{hero.forensic_breakdown.final_integrity_score}</span>
+                <span className="text-[#A9B1D6]">Final Integrity Score</span>
+                <span className="font-bold text-[#7AA2F7]">{hero.forensic_breakdown.final_integrity_score}</span>
               </div>
             </div>
           </div>
