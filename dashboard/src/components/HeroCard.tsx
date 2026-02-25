@@ -1,8 +1,9 @@
 import React from 'react';
-import { ChevronDown, Sparkles, Star, Swords, Trophy } from 'lucide-react';
+import { ChevronDown, Download, Sparkles, Star, Swords, Trophy } from 'lucide-react';
 import { Card } from './Card';
 import { RadarAttributeChart } from './RadarAttributeChart';
 import { AlignmentBadge } from './AlignmentBadge';
+import { API_URL } from '../config';
 
 interface HeroAttributes {
   STR: number;
@@ -84,6 +85,7 @@ const formatXp = (value: number) => value.toLocaleString();
 
 export default function HeroCard({ hero }: { hero: HeroProfile }) {
   const [showBreakdown, setShowBreakdown] = React.useState(false);
+  const [isDownloading, setIsDownloading] = React.useState(false);
   const nextLevelGap = Math.max(hero.xp_next_level - hero.xp_current_level, 1);
   const progressRaw = ((hero.xp - hero.xp_current_level) / nextLevelGap) * 100;
   const progress = Math.max(0, Math.min(100, progressRaw));
@@ -118,6 +120,33 @@ export default function HeroCard({ hero }: { hero: HeroProfile }) {
     return '0 pts';
   };
 
+  const handleShareCard = async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v2/heroes/${hero.mp.id}/share-card?format=primary`
+      );
+      if (!response.ok) {
+        throw new Error(`Share card request failed (${response.status})`);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const fileName = `hero-${hero.mp.name.replace(/\s+/g, '-').toLowerCase()}.png`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download share card:', error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <Card className="p-6 md:p-8 space-y-8 bg-[#2D2E3A] border-[#4E597B] text-[#A9B1D6] rounded-2xl shadow-[0_0_45px_rgba(122,162,247,0.18)]">
       <div className="flex flex-col md:flex-row md:items-center gap-6">
@@ -142,11 +171,19 @@ export default function HeroCard({ hero }: { hero: HeroProfile }) {
           </div>
         </div>
 
-        <div className="md:text-right flex md:block items-center gap-3">
+        <div className="md:text-right flex md:flex-col items-center md:items-end gap-3">
           <div className="text-xs uppercase tracking-[0.2em] text-[#A9B1D6]/70">Level</div>
           <div className="w-16 h-16 rounded-full border-2 border-[#7AA2F7]/70 bg-[#1A1B26] text-[#7AA2F7] text-3xl font-bold flex items-center justify-center shadow-[0_0_16px_rgba(122,162,247,0.35)]">
             {hero.level}
           </div>
+          <button
+            onClick={handleShareCard}
+            disabled={isDownloading}
+            className="inline-flex items-center gap-2 bg-[#7AA2F7] hover:bg-[#5B8AF0] disabled:opacity-60 text-white rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            {isDownloading ? 'Generating...' : 'Share Card'}
+          </button>
         </div>
       </div>
 

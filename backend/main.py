@@ -16,6 +16,10 @@ try:
     from backend.hero_engine import calculate_hero_profile, calculate_all_hero_profiles
 except ImportError:
     from hero_engine import calculate_hero_profile, calculate_all_hero_profiles
+try:
+    from backend.share_card_renderer import render_share_card
+except ImportError:
+    from share_card_renderer import render_share_card
 
 # Add root directory to sys.path to allow importing ingestion scripts
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -514,6 +518,32 @@ def get_hero_profile(mp_id: str):
                 raise HTTPException(status_code=404, detail="MP not found")
             except Exception as exc:
                 raise HTTPException(status_code=500, detail=f"Failed to build hero profile: {exc}")
+
+
+@app.get("/api/v2/heroes/{mp_id}/share-card")
+def get_hero_share_card(mp_id: str, format: str = "primary"):
+    """Generate a deterministic, social-ready hero card PNG."""
+    with get_db_conn() as conn:
+        if not conn:
+            raise HTTPException(status_code=500, detail="Database connection failed")
+
+        with conn.cursor() as cur:
+            try:
+                hero_profile = calculate_hero_profile(mp_id=mp_id, db_cursor=cur)
+                png_bytes = render_share_card(hero_profile=hero_profile, card_format=format)
+            except ValueError:
+                raise HTTPException(status_code=404, detail="MP not found")
+            except Exception as exc:
+                raise HTTPException(status_code=500, detail=f"Failed to render share card: {exc}")
+
+    safe_name = str(hero_profile.get("mp", {}).get("name", "hero")).strip().replace(" ", "-").lower()
+    safe_name = "".join(ch for ch in safe_name if ch.isalnum() or ch in ("-", "_"))
+    safe_name = safe_name.encode("ascii", "ignore").decode("ascii") or "hero"
+    headers = {
+        "Cache-Control": "public, max-age=3600",
+        "Content-Disposition": f'inline; filename="hero-{safe_name}-{format}.png"',
+    }
+    return Response(content=png_bytes, media_type="image/png", headers=headers)
 
 
 @app.get("/api/votes")
