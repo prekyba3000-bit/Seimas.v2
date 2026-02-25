@@ -10,6 +10,7 @@ from utils import fetch_with_retry
 
 DB_DSN = os.getenv("DB_DSN") 
 SEIMAS_API_URL = "https://apps.lrs.lt/sip/p2b.ad_seimo_nariai"
+FACTIONS_API_URL = "https://apps.lrs.lt/sip/p2b.ad_seimo_frakcijos"
 PHOTO_BASE = "https://www.lrs.lt/SIPIS/sn_foto/2024"
 
 def normalize(name):
@@ -29,6 +30,33 @@ def parse_date(date_str):
         return datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
         return None
+
+
+def get_attr(node, candidates):
+    for key in candidates:
+        val = node.get(key)
+        if val is not None and str(val).strip() != "":
+            return str(val).strip()
+    return None
+
+
+def fetch_factions_map() -> dict[str, str]:
+    print(f"Fetching factions XML from {FACTIONS_API_URL}...")
+    response = fetch_with_retry(FACTIONS_API_URL, timeout=30)
+    root = ET.fromstring(response.content)
+    factions: dict[str, str] = {}
+
+    for node in root.findall(".//*"):
+        faction_id = get_attr(node, ("padalinio_id", "frakcijos_id", "frakcija_id", "id"))
+        faction_name = get_attr(
+            node,
+            ("padalinio_pavadinimas", "pavadinimas", "frakcija", "name"),
+        )
+        if faction_id and faction_name:
+            factions[faction_id] = faction_name
+
+    print(f"Resolved {len(factions)} faction IDs.")
+    return factions
 
 
 def is_committee_role(role_name: str, department_name: str) -> bool:
@@ -54,6 +82,8 @@ def sync_db():
         print("ERROR: DB_DSN environment variable not set.")
         return
 
+    factions_map = fetch_factions_map()
+
     print(f"Fetching XML from {SEIMAS_API_URL}...")
     response = fetch_with_retry(SEIMAS_API_URL, timeout=30)
     root = ET.fromstring(response.content)
@@ -78,16 +108,26 @@ def sync_db():
         
         if is_active: active_count += 1
         
-        # 'frakcija' is not an attribute of SeimoNarys, need to look in Pareigos children
-        # But for quick fix, assume user wanted to stick to their structure.
-        # However, to make it work, we must traverse Pareigos.
-        party = 'Unknown'
+        mp_faction_id = get_attr(node, ("frakcijos_id", "frakcija_id", "fakcijos_id"))
+        party = get_attr(node, ("iškėlusi_partija", "iskelusi_partija", "partija")) or 'Unknown'
+        if mp_faction_id and mp_faction_id in factions_map:
+            party = factions_map[mp_faction_id]
+
         for pareigos in node.findall('Pareigos'):
             role_name = pareigos.get('pareigos')
             department_name = pareigos.get('padalinio_pavadinimas')
+            department_id = get_attr(pareigos, ("padalinio_id", "frakcijos_id", "frakcija_id"))
+            department_type = (pareigos.get("padalinio_tipas") or "").lower()
 
-            if role_name == 'Frakcijos narys':
-                party = department_name
+            if "frakc" in department_type and department_id and department_id in factions_map:
+                party = factions_map[department_id]
+
+            role_norm = (role_name or "").lower()
+            if "frakcijos nar" in role_norm:
+                if department_id and department_id in factions_map:
+                    party = factions_map[department_id]
+                elif department_name:
+                    party = department_name
 
             if is_committee_role(role_name or "", department_name or ""):
                 committee_rows.append((
@@ -165,15 +205,38 @@ def sync_db():
                 """,
                 (mp_uuid_list,),
             )
-            execute_values(
-                cur,
+            cur.execute(
                 """
-                INSERT INTO committee_memberships (
-                    mp_id, committee_name, role, start_date, end_date, source_duty_id
-                ) VALUES %s
-                """,
-                committee_payload
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema='public' AND table_name='committee_memberships'
+                """
             )
+            committee_columns = {row[0] for row in cur.fetchall()}
+            if "source_duty_id" in committee_columns:
+                execute_values(
+                    cur,
+                    """
+                    INSERT INTO committee_memberships (
+                        mp_id, committee_name, role, start_date, end_date, source_duty_id
+                    ) VALUES %s
+                    """,
+                    committee_payload
+                )
+            else:
+                stripped_payload = [row[:5] for row in committee_payload]
+                execute_values(
+                    cur,
+                    """
+                    INSERT INTO committee_memberships (
+                        mp_id, committee_name, role, start_date, end_date
+                    ) VALUES %s
+                    """,
+                    stripped_payload
+                )
+
+    print("Refreshing mp_stats_summary after party updates...")
+    cur.execute("REFRESH MATERIALIZED VIEW mp_stats_summary")
 
     conn.commit()
     cur.close()
